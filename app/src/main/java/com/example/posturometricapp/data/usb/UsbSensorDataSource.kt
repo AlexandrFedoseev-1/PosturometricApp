@@ -32,8 +32,16 @@ class UsbSensorDataSource(private val context: Context) {
     // Если калибровка не проведена, оно равно null.
     private var calibrationOffsets: List<Long>? = null
 
+    // Флаг, указывающий на включённый режим калибровки
+    @Volatile
+    private var isCalibrating: Boolean = false
+
+    // Накопитель калибровочных данных
+    private val calibrationAccumulator = mutableListOf<List<Long>>()
+
     // Количество сообщений для калибровки
-    private val calibrationMessageCount = 5
+    private val calibrationMessageCount = 10
+
     /**
      * Запускает прослушивание USB-порта и возвращает поток данных типа SensorDataUsb.
      * Ожидается, что данные имеют следующий формат:
@@ -45,7 +53,8 @@ class UsbSensorDataSource(private val context: Context) {
         val availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager)
 
         if (availableDrivers.isEmpty()) {
-            close(IOException("No USB devices found"))
+            postToast("No USB devices found")
+            close()
             return@callbackFlow
         }
 
@@ -53,7 +62,8 @@ class UsbSensorDataSource(private val context: Context) {
         val driver: UsbSerialDriver = availableDrivers[0]
         val connection = usbManager.openDevice(driver.device)
         if (connection == null) {
-            close(IOException("Could not open USB device"))
+            postToast("Could not open USB device")
+            close()
             return@callbackFlow
         }
 
@@ -67,95 +77,146 @@ class UsbSensorDataSource(private val context: Context) {
                 UsbSerialPort.PARITY_NONE
             )
         } catch (e: Exception) {
-            close(e)
+            postToast("Error initializing port: ${e.localizedMessage}")
+            close()
             return@callbackFlow
         }
 
-        // Внутри класса UsbSensorDataSource объявляем буфер для накопления данных.
+        // Буфер для накопления данных
         val readBuffer = StringBuilder()
 
-        // Реализация ioManager:
+        // Реализация ioManager
         ioManager =
             SerialInputOutputManager(serialPort, object : SerialInputOutputManager.Listener {
                 override fun onNewData(data: ByteArray?) {
-                    data?.let {
-                        // Преобразуем полученный массив байтов в строку
-                        val dataStr = String(it)
+                    try {
+                        data?.let {
+                            // Преобразуем полученный массив байтов в строку
+                            val dataStr = String(it)
 
-                        // Добавляем полученные данные в накопительный буфер
-                        readBuffer.append(dataStr)
+                            // Добавляем полученные данные в накопительный буфер
+                            readBuffer.append(dataStr)
 
-                        // Проверяем, содержится ли в буфере символ завершения '#'
-                        var endIndex = readBuffer.indexOf("#")
-                        // Пока находим символ завершения пакета, обрабатываем полное сообщение
-                        while (endIndex != -1) {
+                            // Проверяем, содержится ли в буфере символ завершения '#'
+                            var endIndex = readBuffer.indexOf("#")
+                            // Пока находим символ завершения пакета, обрабатываем полное сообщение
+                            while (endIndex != -1) {
 
-                            // Извлекаем пакет: с первой позиции до символа '#' включительно
-                            val fullMessageRaw = readBuffer.substring(0, endIndex + 1)
-                            val fullMessage = fullMessageRaw.trim()
+                                // Извлекаем пакет: с первой позиции до символа '#' включительно
+                                val fullMessageRaw = readBuffer.substring(0, endIndex + 1)
+                                val fullMessage = fullMessageRaw.trim()
+                                Log.d("fullMessage", "fullMessage: '$fullMessage'")
+                                if (fullMessage.startsWith("S") && fullMessage.endsWith("#")) {
+                                    val content = fullMessage.substring(1, fullMessage.length - 1)
+                                    val parts = content.split("$")
+                                    if (parts.size == 33) {
+                                        try {
+                                            var sensorValues =
+                                                parts.subList(0, 32).map { it.toLong() }
+                                            val temperature = parts[32].toDouble()
 
-                            Log.d("fullMessage", "Received chunk: $fullMessage")
-                            // Обрабатываем сообщение, если оно соответствует ожидаемому формату
-                            if (fullMessage.startsWith("S") && fullMessage.endsWith("#")) {
-                                val content = fullMessage.substring(1, fullMessage.length - 1)
-                                val parts = content.split("$")
-//                                parts.forEachIndexed { index, token ->
-//                                    Log.d("SEND", "Token $index: '$token' (length: ${token.length})")
-//                                }
-                                if (parts.size == 33) {
-                                    try {
-                                        var sensorValues = parts.subList(0, 32).map { it.toLong() }
-                                        val temperature = parts[32].toDouble()
-                                        // Если проведена калибровка, вычитаем offset для каждого сенсора
-                                        calibrationOffsets?.let { offsets ->
-                                            sensorValues = sensorValues.mapIndexed { index, value ->
-                                                value - offsets[index]
+                                            // Если режим калибровки включён, накапливаем данные, не отправляя их дальше
+                                            if (isCalibrating) {
+                                                calibrationAccumulator.add(sensorValues)
+                                                if (calibrationAccumulator.size >= calibrationMessageCount) {
+                                                    // Вычисляем offset'ы по накопленным данным
+                                                    val numSensors =
+                                                        calibrationAccumulator.first().size
+                                                    val offsets = List(numSensors) { index ->
+                                                        calibrationAccumulator.map { it[index] }
+                                                            .average().toLong()
+                                                    }
+                                                    calibrationOffsets = offsets
+                                                    Log.d(
+                                                        "CALIBRATION",
+                                                        "Calibration offsets computed: $offsets"
+                                                    )
+                                                    // Выключаем режим калибровки и очищаем накопитель
+                                                    isCalibrating = false
+                                                    calibrationAccumulator.clear()
+                                                    // Можно уведомить UI, что калибровка завершена (через какой-либо callback или LiveData)
+                                                }
                                             }
+                                            // Применяем калибровку, если она проведена
+                                            calibrationOffsets?.let { offsets ->
+                                                sensorValues =
+                                                    sensorValues.mapIndexed { index, value ->
+                                                        value - offsets[index]
+                                                    }
+                                            }
+                                            // Если не в режиме калибровки, сразу отправляем данные в поток
+                                            val sensorDataUsb =
+                                                SensorDataUsb(sensorValues, temperature)
+                                            Log.d("sensorValues", "sensorValues: $sensorValues")
+                                            trySend(sensorDataUsb).isSuccess
+
+
+//                                        Log.d("SEND", "sensorDataUsb: $sensorDataUsb")
+                                        } catch (e: Exception) {
+                                            Log.d("SEND", "Error parsing message: $fullMessage", e)
+                                            postToast("Parsing error: ${e.localizedMessage}")
                                         }
-                                        val sensorDataUsb = SensorDataUsb(sensorValues, temperature)
-                                        Log.d("sensorValues", "Full message processed: $sensorValues")
-                                        trySend(sensorDataUsb).isSuccess
-                                        Log.d("SEND", "Full message processed: $sensorDataUsb")
-                                    } catch (e: Exception) {
-                                        Log.d("SEND", "Error parsing message: $fullMessage", e)
+                                    } else {
+                                        Log.d(
+                                            "SEND",
+                                            "Received incomplete or invalid message: $fullMessage"
+                                        )
                                     }
+                                } else {
+                                    Log.d(
+                                        "SEND",
+                                        "Received incomplete or invalid message: $fullMessage"
+                                    )
                                 }
-                            } else {
-                                Log.d(
-                                    "SEND",
-                                    "Received incomplete or invalid message: $fullMessage"
-                                )
+                                // Удаляем обработанный фрагмент из буфера
+                                readBuffer.delete(0, endIndex + 1)
+                                endIndex = readBuffer.indexOf("#")
                             }
-                            // Удаляем обработанный фрагмент из буфера
-                            readBuffer.delete(0, endIndex + 1)
-                            // Проверяем, есть ли еще полный пакет в буфере
-                            endIndex = readBuffer.indexOf("#")
                         }
+                    } catch (e: Exception) {
+                        Log.e("SEND", "Unexpected error while processing data", e)
+                        postToast("Data processing error: ${e.localizedMessage}")
                     }
                 }
 
                 override fun onRunError(e: Exception?) {
-                    close(e ?: IOException("Unknown IO error"))
+                    // Вывод ошибки через Toast и корректное завершение потока
+                    postToast("USB error: ${e?.localizedMessage ?: "Unknown error"}")
+                    close()  // Закрываем поток без передачи ошибки, чтобы приложение не крашнулось
                 }
             })
 
         ioManager?.let { manager ->
             val job = launch(Dispatchers.IO) {
-                Log.d("ioManager", "run")
-                manager.run() // Блокирующий вызов, работающий до остановки
-                Log.d("ioManager", "run2")
+                try {
+                    Log.d("ioManager", "Starting IO Manager run")
+                    manager.run()  // Блокирующий вызов
+                    Log.d("ioManager", "IO Manager run finished")
+                } catch (e: Exception) {
+                    Log.e("ioManager", "Error during IO manager run", e)
+                    postToast("IO manager error: ${e.localizedMessage}")
+                }
             }
             awaitClose {
-                manager.stop()
                 try {
+                    manager.stop()
                     serialPort?.close()
                 } catch (e: Exception) {
-                    // Игнорируем ошибки закрытия
+                    Log.e("ioManager", "Error closing port", e)
+                    postToast("Error closing USB port: ${e.localizedMessage}")
                 }
                 job.cancel()
             }
         } ?: run {
-            close(IOException("IO Manager initialization failed"))
+            postToast("IO Manager initialization failed")
+            close()
+        }
+    }
+
+    // Вспомогательная функция для показа Toast на главном потоке
+    private fun postToast(message: String) {
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
         }
     }
 
@@ -165,32 +226,14 @@ class UsbSensorDataSource(private val context: Context) {
      * Сохранённые offset'ы затем используются для коррекции данных.
      */
     suspend fun calibrateSensors(): Boolean = withContext(Dispatchers.IO) {
-        val collectedValues = mutableListOf<List<Long>>()
-        // Запускаем временный Flow для калибровки
-        val calibrationFlow = startListening()
-        val job = launch {
-            calibrationFlow.collect { sensorDataUsb ->
-                // Добавляем массив значений в список
-                collectedValues.add(sensorDataUsb.sensorValues)
-                if (collectedValues.size >= calibrationMessageCount) {
-                    cancel()  // Останавливаем сбор, как только накопили нужное количество сообщений.
-                }
-            }
-        }
-        job.join() // Ждём завершения сбора
-        return@withContext if (collectedValues.size == calibrationMessageCount) {
-            // Для каждого сенсора вычисляем среднее по собранным значениям.
-            val numSensors = collectedValues[0].size // должен быть 32
-            val offsets = List(numSensors) { index ->
-                collectedValues.map { it[index] }.average().toLong()
-            }
-            calibrationOffsets = offsets
-            Log.d("CALIBRATION", "Calibration offsets computed: $offsets")
-            true
-        } else {
-            Log.e("CALIBRATION", "Failed to collect calibration data")
-            false
-        }
+        // Включаем режим калибровки и очищаем накопитель
+        isCalibrating = true
+        calibrationAccumulator.clear()
+        // Если поток уже запущен, он начнет накапливать данные.
+        // Если нет – можно запустить startListening() для сбора данных.
+        postToast("Calibration started")
+        true
+
     }
 
     /**

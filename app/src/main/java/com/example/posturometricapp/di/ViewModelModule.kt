@@ -1,0 +1,15 @@
+package com.example.posturometricapp.di
+
+import com.example.posturometricapp.ui.SensorViewModel
+import com.example.posturometricapp.ui.session.SessionListViewModel
+import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.dsl.module
+
+val viewModelModule = module {
+    viewModel{
+        SensorViewModel(sensorDataInteractor = get())
+    }
+    viewModel {
+        SessionListViewModel(interactor = get())
+    }
+}

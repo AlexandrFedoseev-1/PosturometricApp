@@ -24,13 +24,52 @@ class SensorViewModel(private val sensorDataInteractor: SensorDataInteractor): V
     // Job для управления сбором данных из потока
     private var sensorDataJob: Job? = null
 
+    // Текущий sessionId, полученный при запуске сеанса
+    private var currentSessionId: Long? = null
+
+    /**
+     * Начинает сеанс. Вызывает startSession() у репозитория (use case),
+     * сохраняет sessionId и запускает прослушивание live-данных.
+     */
+    fun startSession() {
+        viewModelScope.launch {
+            currentSessionId = sensorDataInteractor.startSession()
+            Log.d("Session", "Session started with id: $currentSessionId")
+//            startLiveData() // Можно объединить с запуском live данных
+        }
+    }
+
+    /**
+     * Завершает сеанс.
+     * Вызывает stopSession() у репозитория и останавливает сбор live-данных.
+     */
+    fun stopSession() {
+        viewModelScope.launch {
+            currentSessionId?.let {
+                sensorDataInteractor.stopSession(it)
+                Log.d("Session", "Session stopped with id: $it")
+            }
+            stopLiveData()
+            currentSessionId = null
+        }
+
+    }
+
     /**
      * Запускает сбор live-данных от датчиков.
+     * В дополнение к обновлению LiveData, каждая полученная запись сохраняется в БД
+     * с привязкой к текущему sessionId.
      */
     fun startLiveData() {
         sensorDataJob = viewModelScope.launch {
             sensorDataInteractor.getLiveSensorData().collect { data ->
+                // Обновляем LiveData для UI
                 _sensorData.value = data
+
+                // Если сеанс активен, сохраняем запись в БД
+                currentSessionId?.let { sessionId ->
+                    sensorDataInteractor.saveSensorData(sessionId, data)
+                }
             }
         }
     }
@@ -40,6 +79,7 @@ class SensorViewModel(private val sensorDataInteractor: SensorDataInteractor): V
      */
     fun stopLiveData() {
         sensorDataJob?.cancel()
+        Log.d("Session", "Session stopped with id: ${_sensorData.value?.sensorValues}")
     }
 
     /**
@@ -68,6 +108,7 @@ class SensorViewModel(private val sensorDataInteractor: SensorDataInteractor): V
             sensorDataInteractor.sendCalibrationCommand()
         }
     }
+
     /**
      * Отправляет команду калибровки и (опционально) сохраняет вычисленные offset'ы.
      */
@@ -83,6 +124,7 @@ class SensorViewModel(private val sensorDataInteractor: SensorDataInteractor): V
     }
 
 
+
     /**
      * Преобразует значение датчика в цвет для UI.
      *
@@ -93,15 +135,18 @@ class SensorViewModel(private val sensorDataInteractor: SensorDataInteractor): V
      */
     fun getColorForValue(value: Long): Int {
         return when {
-            value < THRESHOLD_LOW -> Color.GREEN
-            value > THRESHOLD_HIGH -> Color.RED
+            value > THRESHOLD_LOW && value < THRESHOLD_NEGATIVE -> Color.GREEN
+            value < THRESHOLD_HIGH -> Color.RED
+            value > THRESHOLD_NEGATIVE -> Color.BLUE
             else -> Color.YELLOW
         }
     }
 
     companion object {
         // Пороговые значения для определения цвета датчика (примерные значения)
-        const val THRESHOLD_LOW = 3000.0f
-        const val THRESHOLD_HIGH = 4000.0f
+        const val THRESHOLD_LOW = -10000.0f * 100
+        const val THRESHOLD_HIGH = -50000.0f * 100
+        const val THRESHOLD_NEGATIVE = 10000.0f * 100
+
     }
 }
