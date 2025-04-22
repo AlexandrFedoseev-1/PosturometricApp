@@ -1,5 +1,5 @@
 [versions]
-agp = "8.9.1"
+agp = "8.9.2"
 coreKtx = "1.16.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -18,17 +18,19 @@ koinAndroid = "3.5.0"
 kotlinxCoroutinesAndroid = "1.7.3"
 minSdk = "26"
 compileSdk = "35"
+mpandroidchart = "v3.1.0"
 retrofit = "2.11.0"
 okhttp3 = "4.12.0"
 roomVersion = "2.7.0"
 targetSdk = "33"
 
-kotlin = "2.1.0"
+kotlin = "2.0.0"
 legacySupportV4 = "1.0.0"
 lifecycleLivedataKtx = "2.8.7"
 lifecycleViewmodelKtx = "2.8.7"
 fragmentKtx = "1.8.6"
 navigationFragment = "2.8.9"
+usbSerialForAndroid = "3.8.1"
 
 [libraries]
 #androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -46,10 +48,11 @@ glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koinAndroid" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
+mpandroidchart = { module = "com.github.PhilJay:MPAndroidChart", version.ref = "mpandroidchart" }
 navigation-fragment-ktx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigationFragment" }
 navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navigationFragment" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
-okhttp3 = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp3"}
+okhttp3 = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp3" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomVersion" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomVersion" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomVersion" }
@@ -73,6 +76,7 @@ lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecycle-lived
 lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodelKtx" }
 fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragmentKtx" }
 navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment", version.ref = "navigationFragment" }
+usb-serial-for1-android = { module = "com.github.mik3y:usb-serial-for-android", version.ref = "usbSerialForAndroid" }
 
 
 [plugins]

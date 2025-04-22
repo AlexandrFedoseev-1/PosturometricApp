@@ -16,9 +16,14 @@ class SessionListFragment : Fragment() {
     private val viewModel by viewModel<SessionListViewModel>()
     private var _binding: FragmentSessionListBinding? = null
     private val binding get() = _binding!!
-    private val adapter by lazy {SessionAdapter{ sesion ->
-        Toast.makeText(requireContext(),"$sesion",Toast.LENGTH_LONG).show()
-    }  }
+    private val adapter by lazy {
+        SessionAdapter { session ->
+            val action = SessionListFragmentDirections
+                .actionGlobalSessionDetailsFragment(session)
+            findNavController().navigate(action)
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -31,9 +36,10 @@ class SessionListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         binding.rvSessions.adapter = adapter
 
-        viewModel.sessions.observe(viewLifecycleOwner){ sessions ->
+        viewModel.sessions.observe(viewLifecycleOwner) { sessions ->
             adapter.submitList(sessions)
         }
+
     }
 
     companion object {
