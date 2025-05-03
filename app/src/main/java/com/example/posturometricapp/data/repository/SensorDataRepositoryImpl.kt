@@ -75,20 +75,20 @@ class SensorDataRepositoryImpl(
      * Отправляет команду для включения считывания (на Arduino: "CR#").
      */
     override suspend fun sendEnableReadingCommand(): Boolean {
-        return usbSensorDataSource.sendCommand("CR#")
+        return usbSensorDataSource.sendEnableReadingCommand()
     }
 
     /**
      * Отправляет команду для остановки считывания (на Arduino: "CS#").
      */
     override suspend fun sendStopReadingCommand(): Boolean {
-        return usbSensorDataSource.sendCommand("CS#")
+        return usbSensorDataSource.sendStopReadingCommand()
     }
 
     /**
      * Отправляет команду для запуска калибровки (на Arduino: "CU#").
      */
     override suspend fun sendCalibrationCommand(): Boolean {
-        return usbSensorDataSource.sendCommand("CU#")
+        return usbSensorDataSource.sendCalibrationCommand()
     }
 }
