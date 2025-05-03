@@ -6,20 +6,32 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.core.view.isVisible
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.posturometricapp.R
 import com.example.posturometricapp.databinding.FragmentSessionDetailsBinding
 import com.example.posturometricapp.databinding.FragmentSessionListBinding
+import com.example.posturometricapp.domain.model.SensorData
 import com.example.posturometricapp.formatTimestampTime
+import com.example.posturometricapp.ui.BarMarkerView
 import com.example.posturometricapp.ui.SensorMarkerView
 import com.github.mikephil.charting.components.AxisBase
+import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.data.BarData
+import com.github.mikephil.charting.data.BarDataSet
+import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.ValueFormatter
+import com.github.mikephil.charting.highlight.Highlight
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener
 import com.google.android.material.chip.Chip
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.util.Locale
 
 
 class SessionDetailsFragment : Fragment() {
@@ -79,30 +91,71 @@ class SessionDetailsFragment : Fragment() {
         viewModel.chartEntries.observe(viewLifecycleOwner) { entries ->
             updateChart(entries)
         }
-        viewModel.sensorRecords.observe(viewLifecycleOwner) { records ->
-            if (records.isEmpty()) return@observe
+        viewModel.sensorRecords.observe(viewLifecycleOwner) { recs ->
+            if (recs.isEmpty()) return@observe
             val marker = SensorMarkerView(
                 context = requireContext(),
                 layoutResource = R.layout.marker_sensor,
-                entries = records,
+                entries = recs,
                 chartMode = { viewModel.chartMode.value ?: SessionDetailsViewModel.ChartMode.SENSOR },
                 selectedSensorId = { viewModel.selectedSensor.value }
             )
             binding.lineChart.marker = marker
-            binding.lineChart.setOnTouchListener{ v, event ->
-                when (event.actionMasked) {
-                    MotionEvent.ACTION_DOWN -> {
-                        v.parent?.requestDisallowInterceptTouchEvent(true)
-                    }
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                        v.parent?.requestDisallowInterceptTouchEvent(false)
+
+            // 2) Настроить Slider + BarChart
+            if (recs.size < 2) {
+                binding.sliderTime.isVisible = false
+                updateBarChart(0, recs)
+                binding.tvSliderTime.text = "0.0s"
+            } else {
+                binding.sliderTime.apply {
+                    isVisible = true
+                    valueFrom = 0f
+                    valueTo = (recs.size - 1).toFloat()
+                    stepSize = 1f
+                    value = 0f
+                    addOnChangeListener { _, value, _ ->
+                        val idx = value.toInt()
+                        // 1) обновляем гистограмму
+                        updateBarChart(idx, recs)
+                        // 2) обновляем текст сбоку
+//                        val deltaMs = recs[idx].timestamp - recs.first().timestamp
+//                        val seconds = deltaMs / 1000f
+                        val deltaMs = recs[idx].timestamp - (recs.firstOrNull()?.timestamp ?: 0L)
+                        val seconds = deltaMs / 1000
+                        val ms = (deltaMs % 1000) / 100
+                        // Например: "12.3s"
+                        binding.tvSliderTime.text =  "${seconds}.${ms}"
                     }
                 }
-                false
+
+                // отрисуем сразу для позиции 0
+                updateBarChart(0, recs)
+                binding.tvSliderTime.text = "0.0s"
             }
         }// После того, как вы настроили chart (isDragEnabled, isHighlightPerDragEnabled и т.д.)
-
-
+        binding.lineChart.setOnTouchListener{ v, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    v.parent?.requestDisallowInterceptTouchEvent(true)
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    v.parent?.requestDisallowInterceptTouchEvent(false)
+                }
+            }
+            false
+        }
+        binding.barChart.setOnTouchListener{ v, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    v.parent?.requestDisallowInterceptTouchEvent(true)
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    v.parent?.requestDisallowInterceptTouchEvent(false)
+                }
+            }
+            false
+        }
 
 
         // 6) Stats
@@ -116,8 +169,44 @@ class SessionDetailsFragment : Fragment() {
 
             }
         }
-    }
 
+    }
+    private fun updateBarChart(index: Int, recs: List<SensorData>) {
+        // получаем именно тот замер
+        val values = recs[index].sensorValues
+
+        // создаём BarEntry для всех 32 сенсоров
+        val entries = values.mapIndexed { sensorId, v ->
+            BarEntry(sensorId.toFloat(), v.toFloat())
+        }
+
+        val set = BarDataSet(entries, "Давление по сенсорам").apply {
+            setDrawValues(false)
+        }
+        val data = BarData(set).apply {
+            barWidth = 0.8f
+        }
+
+        binding.barChart.apply {
+            this.data = data
+            description.isEnabled = false
+            axisRight.isEnabled = false
+            val marker = BarMarkerView(requireContext(), R.layout.marker_sensor)
+            binding.barChart.marker = marker
+            // X-ось: подписи «№1, №2, … №32»
+            xAxis.apply {
+                granularity = 1f
+                valueFormatter = IndexAxisValueFormatter((1..32).map { "#$it" })
+                position = XAxis.XAxisPosition.BOTTOM
+            }
+
+            axisLeft.axisMinimum = 0f  // если хотим от нуля
+            // Включаем реакцию на тапы
+            isHighlightPerTapEnabled = true
+
+            invalidate()
+        }
+    }
     private fun sensorChartSetup() {
         with(binding.lineChart) {
             description.isEnabled = false

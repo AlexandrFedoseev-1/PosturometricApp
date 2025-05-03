@@ -1,20 +1,21 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.google.devtools.ksp)
+    alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.androidx.navigation.safeargs.kotlin)
 }
 
 android {
     namespace = "com.example.posturometricapp"
-    compileSdk = 35
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "com.example.posturometricapp"
-        minSdk = 30
-        targetSdk = 34
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.compileSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -41,7 +42,8 @@ android {
 }
 
 dependencies {
-    implementation ("com.github.mik3y:usb-serial-for-android:3.8.1")
+    implementation(libs.usb.serial.for1.android)
+    implementation(libs.mpandroidchart)
     implementation(libs.androidX.core)
     implementation(libs.androidX.appCompat)
     implementation(libs.koin.android)
@@ -59,21 +61,13 @@ dependencies {
     implementation(libs.converter.gson)
     implementation(libs.okhttp3)
 
-    // UI layer libraries
     implementation(libs.ui.material)
     implementation(libs.ui.constraintLayout)
-    implementation(libs.legacy.support.v4)
     implementation(libs.lifecycle.livedata.ktx)
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.fragment.ktx)
-    implementation(libs.navigation.fragment)
 
-    // region Unit tests
     testImplementation(libs.unitTests.junit)
-    // endregion
-
-    // region UI tests
     androidTestImplementation(libs.uiTests.junitExt)
     androidTestImplementation(libs.uiTests.espressoCore)
-    // endregion
 }

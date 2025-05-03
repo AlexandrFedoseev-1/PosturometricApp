@@ -57,6 +57,7 @@ class SensorFragment : Fragment() {
             }
         }
     }
+
     private val viewModel by viewModel<SensorViewModel>()
     private var _binding: FragmentSensorBinding? = null
     private val binding get() = _binding!!

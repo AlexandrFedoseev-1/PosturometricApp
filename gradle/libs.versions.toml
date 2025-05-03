@@ -1,5 +1,7 @@
 [versions]
 agp = "8.9.2"
+kotlin = "2.1.20"
+ksp = "2.1.20-1.0.32"
 coreKtx = "1.16.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -24,7 +26,6 @@ okhttp3 = "4.12.0"
 roomVersion = "2.7.0"
 targetSdk = "33"
 
-kotlin = "2.0.0"
 legacySupportV4 = "1.0.0"
 lifecycleLivedataKtx = "2.8.7"
 lifecycleViewmodelKtx = "2.8.7"
@@ -82,4 +83,6 @@ usb-serial-for1-android = { module = "com.github.mik3y:usb-serial-for-android", 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-
+google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
+androidx-navigation-safeargs-kotlin = { id = "androidx.navigation.safeargs.kotlin", version.ref = "navigationFragment" }

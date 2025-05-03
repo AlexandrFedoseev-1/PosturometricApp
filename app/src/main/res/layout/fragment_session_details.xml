@@ -7,7 +7,6 @@
     tools:context=".ui.sessionDetails.SessionDetailsFragment">
 
 
-
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
@@ -30,9 +29,11 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbar">
+
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
+
             <LinearLayout
                 android:id="@+id/headerInfo"
                 android:layout_width="0dp"
@@ -104,7 +105,38 @@
                     app:selectionRequired="true"
                     app:singleSelection="true" />
             </HorizontalScrollView>
+            <TextView
+                android:id="@+id/tvSliderTime"
+                android:layout_width="48dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="0.0s"
+                android:textSize="14sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintStart_toEndOf="@id/sliderTime"
+                app:layout_constraintTop_toTopOf="@id/sliderTime"
+                app:layout_constraintBottom_toBottomOf="@id/sliderTime" />
+            <com.google.android.material.slider.Slider
+                android:id="@+id/sliderTime"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:stepSize="1"
+                android:valueFrom="0"
+                android:valueTo="1"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/tvSliderTime"
+                app:layout_constraintTop_toBottomOf="@id/barChart" />
 
+            <!-- BarChart для отображения всех 32 сенсоров -->
+            <com.github.mikephil.charting.charts.BarChart
+                android:id="@+id/barChart"
+                android:layout_width="0dp"
+                android:layout_height="200dp"
+                android:layout_margin="16dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/scroll" />
             <!-- График -->
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/lineChart"
@@ -114,7 +146,7 @@
                 android:padding="16dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/scroll" />
+                app:layout_constraintTop_toBottomOf="@id/sliderTime" />
 
             <!-- Статистика выбранного датчика -->
             <com.google.android.material.card.MaterialCardView
