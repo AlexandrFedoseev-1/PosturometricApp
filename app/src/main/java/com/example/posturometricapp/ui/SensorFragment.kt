@@ -1,5 +1,6 @@
 package com.example.posturometricapp.ui
 
+import android.app.AlertDialog
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -58,6 +59,7 @@ class SensorFragment : Fragment() {
         }
     }
 
+    private val psychStates = listOf("Спокойный", "Напряженный", "Встревоженный", "Расслабленный")
     private val viewModel by viewModel<SensorViewModel>()
     private var _binding: FragmentSensorBinding? = null
     private val binding get() = _binding!!
@@ -103,9 +105,9 @@ class SensorFragment : Fragment() {
 
             }
         }
-        binding.btnEnableReading.setOnClickListener {
-            viewModel.startSession()
-        }
+//        binding.btnEnableReading.setOnClickListener {
+//            viewModel.startSession()
+//        }
         binding.btnStopReading.setOnClickListener {
             viewModel.stopSession()
         }
@@ -116,12 +118,34 @@ class SensorFragment : Fragment() {
             viewModel.calibrateSensors()
         }
         binding.btnStartLiveData.setOnClickListener {
-            requestUsbPermission()
-        }
-        binding.btnStopLiveData.setOnClickListener {
-            viewModel.stopLiveData()
+//            requestUsbPermission()
+            viewModel.playSession(1)
         }
 
+        binding.btnStopLiveData.setOnClickListener {
+//            viewModel.stopLiveData()
+            viewModel.stopPlayback()
+        }
+        binding.btnEnableReading.setOnClickListener {
+            AlertDialog.Builder(requireContext())
+                .setTitle("Выберите ваше ментальное состояние")
+                .setItems(psychStates.toTypedArray()) { _, which ->
+                    val state = psychStates[which]
+                    viewModel.startSessionWithPsychState(state)
+//                    viewModel.startLiveData()
+                }
+                .show()
+        }
+
+        binding.btnChangePsychState.setOnClickListener {
+            AlertDialog.Builder(requireContext())
+                .setTitle("Изменить ваше ментальное состояние")
+                .setItems(psychStates.toTypedArray()) { _, which ->
+                    val state = psychStates[which]
+                    viewModel.switchPsychState(state)
+                }
+                .show()
+        }
     }
 
     override fun onDestroy() {

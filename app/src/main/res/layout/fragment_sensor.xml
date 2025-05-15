@@ -35,8 +35,6 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
-                <!-- 16 сенсоров для спинки -->
-                <!-- Сенсоры можно задавать либо программно, либо объявить здесь вручную -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/sensor20"
                     style="@style/SensorStyle"
@@ -253,6 +251,11 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/grid_seat">
+                <Button
+                    android:id="@+id/btnChangePsychState"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Состояние" />
 
                 <Button
                     android:id="@+id/btnEnableReading"

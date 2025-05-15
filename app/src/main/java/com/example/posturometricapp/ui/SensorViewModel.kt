@@ -6,7 +6,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.posturometricapp.FakeUsbSensorDataSource
+import com.example.posturometricapp.SessionPlaybackSensorDataSource
+import com.example.posturometricapp.domain.api.PsychStateInteractor
 import com.example.posturometricapp.domain.api.SensorDataInteractor
 import com.example.posturometricapp.domain.model.SensorData
 import kotlinx.coroutines.Job
@@ -16,7 +17,11 @@ import kotlinx.coroutines.launch
  * ViewModel для работы с данными датчиков.
  * Получает live-данные через SensorDataInteractor и преобразовывает их для UI.
  */
-class SensorViewModel(private val sensorDataInteractor: SensorDataInteractor): ViewModel() {
+class SensorViewModel(
+    private val sensorDataInteractor: SensorDataInteractor,
+    private val psychStateInteractor: PsychStateInteractor,
+    private val playbackSource: SessionPlaybackSensorDataSource
+) : ViewModel() {
 
     private val _sensorData = MutableLiveData<SensorData>()
     val sensorData: LiveData<SensorData> get() = _sensorData
@@ -24,8 +29,13 @@ class SensorViewModel(private val sensorDataInteractor: SensorDataInteractor): V
     // Job для управления сбором данных из потока
     private var sensorDataJob: Job? = null
 
+    private var playbackJob: Job? = null
+
     // Текущий sessionId, полученный при запуске сеанса
     private var currentSessionId: Long? = null
+
+    // Текущий psychStateId
+    private var currentStateId: Long? = null
 
     /**
      * Начинает сеанс. Вызывает startSession() у репозитория (use case),
@@ -39,20 +49,36 @@ class SensorViewModel(private val sensorDataInteractor: SensorDataInteractor): V
         }
     }
 
+    fun startSessionWithPsychState(stateName: String) {
+        viewModelScope.launch {
+            currentSessionId = sensorDataInteractor.startSession()
+            currentStateId = psychStateInteractor.startState(currentSessionId!!, stateName)
+        }
+    }
+
     /**
      * Завершает сеанс.
      * Вызывает stopSession() у репозитория и останавливает сбор live-данных.
      */
+
     fun stopSession() {
         viewModelScope.launch {
-            currentSessionId?.let {
-                sensorDataInteractor.stopSession(it)
-                Log.d("Session", "Session stopped with id: $it")
-            }
-            stopLiveData()
+            // Завершаем текущее псих. состояние
+            currentStateId?.let { psychStateInteractor.endState(it) }
+            // Завершаем сессию и поток данных
+            currentSessionId?.let { sensorDataInteractor.stopSession(it) }
+            sensorDataJob?.cancel()
             currentSessionId = null
+            currentStateId = null
         }
+    }
 
+    fun switchPsychState(stateName: String) {
+        viewModelScope.launch {
+            currentSessionId?.let {
+                currentStateId = psychStateInteractor.switchState(it, stateName)
+            }
+        }
     }
 
     /**
@@ -124,6 +150,23 @@ class SensorViewModel(private val sensorDataInteractor: SensorDataInteractor): V
     }
 
 
+    /** Запуск воспроизведения записи из БД */
+    fun playSession(sessionId: Long) {
+        playbackJob?.cancel()
+        playbackJob = viewModelScope.launch {
+            playbackSource.startPlayback(sessionId).collect { data ->
+                _sensorData.value = data
+                // Если сеанс активен, сохраняем запись в БД
+                currentSessionId?.let { sessionId ->
+                    sensorDataInteractor.saveSensorData(sessionId, data)
+                }
+            }
+        }
+    }
+
+    fun stopPlayback() {
+        playbackJob?.cancel()
+    }
 
     /**
      * Преобразует значение датчика в цвет для UI.

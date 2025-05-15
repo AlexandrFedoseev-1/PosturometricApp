@@ -9,8 +9,10 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.map
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
+import com.example.posturometricapp.domain.api.PsychStateInteractor
 
 import com.example.posturometricapp.domain.api.SessionInteractor
+import com.example.posturometricapp.domain.model.PsychState
 import com.example.posturometricapp.domain.model.SensorData
 import com.github.mikephil.charting.data.Entry
 import kotlinx.coroutines.launch
@@ -21,7 +23,10 @@ import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-class SessionDetailsViewModel(private val interactor: SessionInteractor) : ViewModel() {
+class SessionDetailsViewModel(
+    private val interactor: SessionInteractor,
+    private val psychStateInteractor: PsychStateInteractor
+) : ViewModel() {
     // 1️⃣ Session metadata
 //    val session = interactor.observeSession(sessionId).asLiveData()
 
@@ -32,11 +37,35 @@ class SessionDetailsViewModel(private val interactor: SessionInteractor) : ViewM
     private val lastValues = MutableList(32) { 0L }
     private val history = Array(32) { mutableListOf<Long>() }
 
+
+    private val _psychStates = MutableLiveData<List<PsychState>>()
+    val psychStates: LiveData<List<PsychState>> = _psychStates
+
+    private val _currentPsychState = MutableLiveData<String>()
+    val currentPsychState: LiveData<String> = _currentPsychState
     // Параметры
     private val alpha = 0.2
     private val rateLimit = 10_000_000L
     private val outlierZThreshold = 3.0
     private val historySize = 30
+
+    fun onSliderIndexChanged(idx: Int) {
+        val recs = sensorRecords.value.orEmpty()
+        val states = psychStates.value.orEmpty()
+
+
+        if (recs.isEmpty() || states.isEmpty()) {
+            _currentPsychState.value = "–"
+            return
+        }
+        val ts = recs.getOrNull(idx)?.timestamp ?: return
+
+        // ищем состояние, у которого start ≤ ts ≤ end
+        _currentPsychState.value = states
+            .find { it.startTime <= ts && ts <= it.endTime!! }
+            ?.stateName
+            ?: "–"
+    }
 
     private fun filterOutliers(values: List<Long>): List<Long> {
         return values.mapIndexed { idx, value ->
@@ -55,10 +84,14 @@ class SessionDetailsViewModel(private val interactor: SessionInteractor) : ViewM
             filtered
         }
     }
+
     fun filterOutliers(sensorValues: Map<Int, List<Long>>): Map<Int, List<Long>> {
         return sensorValues.mapValues { (_, values) ->
             val mean = values.average()
-            val std = sqrt(values.map { (it - mean).toDouble().pow(2) }.average().coerceAtLeast(1.0)) // защита от деления на 0
+            val std = sqrt(
+                values.map { (it - mean).toDouble().pow(2) }.average()
+                    .coerceAtLeast(1.0)
+            ) // защита от деления на 0
 
             values.map { value ->
                 val z = (value - mean) / std
@@ -92,6 +125,7 @@ class SessionDetailsViewModel(private val interactor: SessionInteractor) : ViewM
             limited
         }
     }
+
     fun filterRateLimit(sensorValues: Map<Int, List<Long>>): Map<Int, List<Long>> {
         return sensorValues.mapValues { (_, values) ->
             if (values.isEmpty()) return@mapValues emptyList()
@@ -122,6 +156,7 @@ class SessionDetailsViewModel(private val interactor: SessionInteractor) : ViewM
             smoothed.toLong()
         }
     }
+
     fun filterEma(sensorValues: Map<Int, List<Long>>): Map<Int, List<Long>> {
         return sensorValues.mapValues { (_, values) ->
             if (values.isEmpty()) return@mapValues emptyList()
@@ -138,7 +173,7 @@ class SessionDetailsViewModel(private val interactor: SessionInteractor) : ViewM
         }
     }
 
-    fun getSensorDataForSession(sessionId: Long) {
+    fun getDataForSession(sessionId: Long) {
         viewModelScope.launch {
             interactor.getSensorDataForSession(sessionId).collect { list ->
                 val fixed = list.map { data ->
@@ -151,6 +186,12 @@ class SessionDetailsViewModel(private val interactor: SessionInteractor) : ViewM
                     data.copy(sensorValues = step2)
                 }
                 sensorData.postValue(smoothedList)
+            }
+
+        }
+        viewModelScope.launch {
+            psychStateInteractor.getStatesForSession(sessionId).collect { list ->
+                _psychStates.postValue(list)
             }
         }
     }
@@ -190,14 +231,14 @@ class SessionDetailsViewModel(private val interactor: SessionInteractor) : ViewM
             if (recs.isEmpty()) return
             // Use session-relative seconds as x
             val entries = when (_chartMode.value) {
-                ChartMode.TEMPERATURE -> recs.mapIndexed  {i, it ->
+                ChartMode.TEMPERATURE -> recs.mapIndexed { i, it ->
                     Entry(i.toFloat(), it.temperature.toFloat())
                 }
 
 
                 ChartMode.SENSOR -> {
                     val idx = _selectedSensor.value ?: 0
-                    recs.mapIndexed  {i, it ->
+                    recs.mapIndexed { i, it ->
                         Entry(i.toFloat(), it.sensorValues[idx].toFloat())
                     }
                 }

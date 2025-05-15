@@ -127,6 +127,16 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@id/tvSliderTime"
                 app:layout_constraintTop_toBottomOf="@id/barChart" />
+            <TextView
+                android:id="@+id/tvPsychState"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Состояние: –"
+                android:textSize="14sp"
+                android:layout_marginTop="8dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/sliderTime"/>
 
             <!-- BarChart для отображения всех 32 сенсоров -->
             <com.github.mikephil.charting.charts.BarChart
@@ -146,7 +156,7 @@
                 android:padding="16dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/sliderTime" />
+                app:layout_constraintTop_toBottomOf="@id/tvPsychState" />
 
             <!-- Статистика выбранного датчика -->
             <com.google.android.material.card.MaterialCardView

@@ -7,13 +7,18 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val viewModelModule = module {
-    viewModel{
-        SensorViewModel(sensorDataInteractor = get())
-    }
+
     viewModel {
         SessionListViewModel(interactor = get())
     }
     viewModel {
-        SessionDetailsViewModel(interactor = get())
+        SessionDetailsViewModel(interactor = get(), psychStateInteractor = get())
+    }
+    viewModel {
+        SensorViewModel(
+            sensorDataInteractor = get(),
+            psychStateInteractor = get(),
+            get()
+        )
     }
 }
