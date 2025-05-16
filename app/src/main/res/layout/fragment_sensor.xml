@@ -10,7 +10,7 @@
         android:id="@+id/scroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginBottom="32dp"
+        android:layout_marginBottom="10dp"
         android:clipToPadding="false"
         android:fillViewport="true"
         android:focusableInTouchMode="true"
@@ -23,6 +23,104 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
+            <LinearLayout
+                android:id="@+id/llPsychState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Текущее состояние: "
+                    android:textSize="24sp"
+
+                    />
+
+                <TextView
+                    android:id="@+id/tvPsychState"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Расслабленный"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRequestUsbPermission"
+                style="@style/ButtonStyle"
+                app:icon ="@drawable/usb_svgrepo_com"
+                android:visibility="visible"
+                app:layout_constraintBottom_toBottomOf="@+id/grid_head"
+                app:layout_constraintEnd_toStartOf="@+id/grid_head"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/grid_head" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEnableReading"
+                style="@style/ButtonStyle"
+                android:layout_marginStart="16dp"
+                android:tooltipText="Начать сессию"
+                app:icon="@drawable/play_svgrepo_com"
+                app:layout_constraintBottom_toBottomOf="@+id/grid_head"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/grid_head" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStopReading"
+                style="@style/ButtonStyle"
+                android:layout_marginStart="16dp"
+                app:icon="@drawable/stop_svgrepo_com"
+                app:iconGravity="top"
+                android:tooltipText="Остановить сессию"
+                app:layout_constraintBottom_toBottomOf="@+id/grid_head"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/grid_head" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStartLiveData"
+                style="@style/ButtonStyle"
+                android:layout_marginStart="16dp"
+                app:icon="@drawable/play_stream_svgrepo_com"
+                app:layout_constraintBottom_toBottomOf="@+id/grid_head"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/grid_head"
+                android:tooltipText="Запустить поток данных" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStopLiveData"
+                style="@style/ButtonStyle"
+                android:layout_marginEnd="16dp"
+                app:icon="@drawable/signal_stream_slash_svgrepo_com"
+                app:layout_constraintBottom_toBottomOf="@+id/grid_head"
+                app:layout_constraintEnd_toStartOf="@id/grid_head"
+                app:layout_constraintTop_toTopOf="@id/grid_head"
+                android:tooltipText="Остановить поток данных" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnChangePsychState"
+                style="@style/ButtonStyle"
+                android:layout_marginStart="16dp"
+                app:icon="@drawable/smile_circle_svgrepo_com"
+                app:layout_constraintBottom_toBottomOf="@+id/grid_head"
+                app:layout_constraintStart_toEndOf="@id/grid_head"
+                app:layout_constraintTop_toTopOf="@id/grid_head"
+                android:tooltipText="Состояние" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnMoreActions"
+                style="@style/ButtonStyle"
+                android:layout_marginEnd="16dp"
+                app:icon="@drawable/settings_svgrepo_com"
+                android:tooltipText="Настройки"
+                app:layout_constraintBottom_toBottomOf="@+id/grid_head"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/grid_head" />
+
             <GridLayout
                 android:id="@+id/grid_head"
                 android:layout_width="wrap_content"
@@ -34,7 +132,8 @@
                 android:rowCount="1"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
+                app:layout_constraintTop_toBottomOf="@id/llPsychState">
+
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/sensor20"
                     style="@style/SensorStyle"
@@ -240,59 +339,6 @@
                 <!-- ... добавить остальные sensor_back_2 .. sensor_back_16 -->
             </GridLayout>
 
-            <LinearLayout
-                android:id="@+id/buttonContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:layout_gravity="bottom"
-                android:padding="16dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/grid_seat">
-                <Button
-                    android:id="@+id/btnChangePsychState"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Состояние" />
-
-                <Button
-                    android:id="@+id/btnEnableReading"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Начать сессию" />
-
-                <Button
-                    android:id="@+id/btnStopReading"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Закончить сессию" />
-
-                <Button
-                    android:id="@+id/btnCalibrateArduino"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Запустить калибровку Ардуино" />
-                <Button
-                    android:id="@+id/btnCalibrateApp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Запустить калибровку програмно" />
-                <Button
-                    android:id="@+id/btnStartLiveData"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Запустить поток данных" />
-                <Button
-                    android:id="@+id/btnStopLiveData"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Остановить поток данных" />
-
-            </LinearLayout>
-
-            <!-- Кнопки управления, например, в нижней части экрана -->
         </androidx.constraintlayout.widget.ConstraintLayout>
 
 

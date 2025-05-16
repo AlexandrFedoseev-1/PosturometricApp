@@ -12,6 +12,10 @@ class SessionInteractorImpl(
     override fun getAllSessions(): Flow<List<Session>> =
         repository.getAllSessions()
 
+    override suspend fun deleteSession(session: Session) {
+        repository.deleteSession(session)
+    }
+
     override fun getSensorDataForSession(sessionId: Long): Flow<List<SensorData>> =
         repository.getSensorDataForSession(sessionId)
 }

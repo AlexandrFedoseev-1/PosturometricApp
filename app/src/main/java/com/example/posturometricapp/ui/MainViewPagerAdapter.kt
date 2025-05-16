@@ -10,7 +10,7 @@ class MainViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifecycl
     FragmentStateAdapter(fragmentManager, lifecycle) {
     override fun getItemCount(): Int = 2
     override fun createFragment(position: Int): Fragment {
-        return if (position == 0) SensorFragment.newInstance()
-        else SessionListFragment.newInstance()
+        return if (position == 0) SensorFragment()
+        else SessionListFragment()
     }
 }

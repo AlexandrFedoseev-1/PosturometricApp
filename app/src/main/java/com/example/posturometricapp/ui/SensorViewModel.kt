@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.posturometricapp.SessionPlaybackSensorDataSource
 import com.example.posturometricapp.domain.api.PsychStateInteractor
 import com.example.posturometricapp.domain.api.SensorDataInteractor
+import com.example.posturometricapp.domain.model.SensorButtonState
 import com.example.posturometricapp.domain.model.SensorData
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -25,6 +26,15 @@ class SensorViewModel(
 
     private val _sensorData = MutableLiveData<SensorData>()
     val sensorData: LiveData<SensorData> get() = _sensorData
+
+    private val _screenState = MutableLiveData<SensorButtonState>(SensorButtonState.Empty)
+    val screenState: LiveData<SensorButtonState> get() = _screenState
+
+    private val _message = MutableLiveData<String>("")
+    val message: LiveData<String> get() = _message
+
+    private val _psychState = MutableLiveData<String>("")
+    val psychState: LiveData<String> get() = _psychState
 
     // Job для управления сбором данных из потока
     private var sensorDataJob: Job? = null
@@ -53,7 +63,10 @@ class SensorViewModel(
         viewModelScope.launch {
             currentSessionId = sensorDataInteractor.startSession()
             currentStateId = psychStateInteractor.startState(currentSessionId!!, stateName)
+            _screenState.value = SensorButtonState.StartSession
         }
+        _psychState.value = stateName
+        _message.value = "Запись сессии начата!"
     }
 
     /**
@@ -68,8 +81,12 @@ class SensorViewModel(
             // Завершаем сессию и поток данных
             currentSessionId?.let { sensorDataInteractor.stopSession(it) }
             sensorDataJob?.cancel()
+            playbackJob?.cancel()
             currentSessionId = null
             currentStateId = null
+            _screenState.value = SensorButtonState.HasPermission
+            _message.value = "Сессия завершена!"
+            _psychState.value = ""
         }
     }
 
@@ -79,6 +96,7 @@ class SensorViewModel(
                 currentStateId = psychStateInteractor.switchState(it, stateName)
             }
         }
+        _psychState.value = stateName
     }
 
     /**
@@ -97,6 +115,8 @@ class SensorViewModel(
                     sensorDataInteractor.saveSensorData(sessionId, data)
                 }
             }
+            _message.value = "Запущен поток данных!"
+            _screenState.value = SensorButtonState.StreamData
         }
     }
 
@@ -104,8 +124,14 @@ class SensorViewModel(
      * Останавливает сбор live-данных.
      */
     fun stopLiveData() {
-        sensorDataJob?.cancel()
-        Log.d("Session", "Session stopped with id: ${_sensorData.value?.sensorValues}")
+        if (currentSessionId != null) {
+            stopSession()
+        } else {
+            sensorDataJob?.cancel()
+            _screenState.value = SensorButtonState.HasPermission
+            _message.value = "Поток данных остановлен!"
+        }
+
     }
 
     /**
@@ -162,10 +188,18 @@ class SensorViewModel(
                 }
             }
         }
+        _message.value = "Запущен поток данных!"
+        _screenState.value = SensorButtonState.StreamData
     }
 
     fun stopPlayback() {
-        playbackJob?.cancel()
+        if (currentSessionId != null) {
+            stopSession()
+        } else {
+            playbackJob?.cancel()
+            _screenState.value = SensorButtonState.HasPermission
+            _message.value = "Поток данных остановлен!"
+        }
     }
 
     /**
@@ -184,6 +218,14 @@ class SensorViewModel(
             else -> Color.YELLOW
         }
     }
+    fun fakePermissions(){
+        _message.value = "Успешное подключение!"
+        _screenState.value = SensorButtonState.HasPermission
+    }
+    fun clearMessage() {
+        _message.value = ""
+    }
+
 
     companion object {
         // Пороговые значения для определения цвета датчика (примерные значения)

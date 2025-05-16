@@ -12,7 +12,8 @@ import com.example.posturometricapp.formatTimestampDate
 import com.example.posturometricapp.formatTimestampTime
 
 class SessionAdapter(
-    private val onClick: (Session) -> Unit
+    private val onClick: (Session) -> Unit,
+    private val onLongTrackClick: (Session) -> Unit
 ) : ListAdapter<Session, SessionAdapter.ViewHolder>(DIFF) {
 
     companion object {
@@ -28,6 +29,10 @@ class SessionAdapter(
             binding.start.text = "Начало:" + formatTimestampTime(item.startTime)
             binding.end.text = "Конец:" + (item.endTime?.let { formatTimestampTime(it) } ?: "–")
             binding.root.setOnClickListener { onClick(item) }
+            binding.root.setOnLongClickListener {
+                onLongTrackClick(item)
+                true
+            }
         }
     }
 

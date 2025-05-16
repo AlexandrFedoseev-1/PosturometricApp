@@ -134,7 +134,7 @@ class UsbSensorDataSource(private val context: Context) {
                                                     // Выключаем режим калибровки и очищаем накопитель
                                                     isCalibrating = false
                                                     calibrationAccumulator.clear()
-                                                    // Можно уведомить UI, что калибровка завершена (через какой-либо callback или LiveData)
+                                                   postToast("Калибровка завершена!")
                                                 }
                                             }
                                             // Применяем калибровку, если она проведена
@@ -231,7 +231,7 @@ class UsbSensorDataSource(private val context: Context) {
         calibrationAccumulator.clear()
         // Если поток уже запущен, он начнет накапливать данные.
         // Если нет – можно запустить startListening() для сбора данных.
-        postToast("Calibration started")
+        postToast("Начало калибровки")
         true
 
     }

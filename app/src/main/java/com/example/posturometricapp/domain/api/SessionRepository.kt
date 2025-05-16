@@ -7,6 +7,6 @@ import kotlinx.coroutines.flow.Flow
 
 interface SessionRepository {
     fun getAllSessions(): Flow<List<Session>>
-//    fun getSessionById(sessionId: Long): Flow<SessionEntity?>
+    suspend fun deleteSession(session: Session)
     fun getSensorDataForSession(sessionId: Long): Flow<List<SensorData>>
 }

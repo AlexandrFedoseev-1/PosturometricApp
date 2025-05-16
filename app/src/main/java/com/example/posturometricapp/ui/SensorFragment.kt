@@ -16,12 +16,16 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.content.ContextCompat.registerReceiver
+import androidx.core.view.isVisible
 
 import com.example.posturometricapp.R
 import com.example.posturometricapp.databinding.FragmentSensorBinding
+import com.example.posturometricapp.domain.model.SensorButtonState
 import com.google.android.material.button.MaterialButton
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -29,7 +33,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class SensorFragment : Fragment() {
     companion object {
-        fun newInstance() = SensorFragment()
+
         private const val ACTION_USB_PERMISSION = "com.example.posturometricapp.USB_PERMISSION"
 
     }
@@ -96,6 +100,26 @@ class SensorFragment : Fragment() {
             filter,
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
+        viewModel.message.observe(viewLifecycleOwner) { message ->
+            if (message.isNotEmpty()) {
+                postToast(message)
+                viewModel.clearMessage()
+            }
+        }
+        viewModel.screenState.observe(viewLifecycleOwner){ state ->
+            binding.btnRequestUsbPermission.isVisible = state is SensorButtonState.Empty
+            binding.btnMoreActions.isVisible = state is SensorButtonState.StreamData || state is SensorButtonState.StartSession
+            binding.btnChangePsychState.isVisible = state is SensorButtonState.StartSession
+            binding.btnStartLiveData.isVisible = state is SensorButtonState.HasPermission
+            binding.btnStopLiveData.isVisible = state is SensorButtonState.StreamData || state is SensorButtonState.StartSession
+            binding.btnEnableReading.isVisible =state is SensorButtonState.StreamData
+            binding.btnStopReading.isVisible = state is SensorButtonState.StartSession
+        }
+
+        viewModel.psychState.observe(viewLifecycleOwner){ stateName ->
+            binding.llPsychState.isVisible = stateName.isNotEmpty()
+            binding.tvPsychState.text = stateName
+        }
 
         viewModel.sensorData.observe(viewLifecycleOwner) { sensorData ->
             sensorData.sensorValues.forEachIndexed { index, sensorValue ->
@@ -105,18 +129,23 @@ class SensorFragment : Fragment() {
 
             }
         }
-//        binding.btnEnableReading.setOnClickListener {
-//            viewModel.startSession()
-//        }
+
         binding.btnStopReading.setOnClickListener {
             viewModel.stopSession()
         }
-        binding.btnCalibrateArduino.setOnClickListener {
-            viewModel.calibrate()
+        binding.btnRequestUsbPermission.setOnClickListener{
+//            requestUsbPermission()
+            viewModel.fakePermissions()
         }
-        binding.btnCalibrateApp.setOnClickListener {
-            viewModel.calibrateSensors()
+        binding.btnMoreActions.setOnClickListener {
+            showMoreActionsMenu(it)
         }
+//        binding.btnCalibrateArduino.setOnClickListener {
+//            viewModel.calibrate()
+//        }
+//        binding.btnCalibrateApp.setOnClickListener {
+//            viewModel.calibrateSensors()
+//        }
         binding.btnStartLiveData.setOnClickListener {
 //            requestUsbPermission()
             viewModel.playSession(1)
@@ -132,7 +161,6 @@ class SensorFragment : Fragment() {
                 .setItems(psychStates.toTypedArray()) { _, which ->
                     val state = psychStates[which]
                     viewModel.startSessionWithPsychState(state)
-//                    viewModel.startLiveData()
                 }
                 .show()
         }
@@ -158,6 +186,7 @@ class SensorFragment : Fragment() {
         val availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager)
 
         if (availableDrivers.isEmpty()) {
+            postToast("USB девайс не найден!")
             Log.e("requestUsbPermission", "No USB devices found")
             return
         }
@@ -173,9 +202,11 @@ class SensorFragment : Fragment() {
                 Intent(ACTION_USB_PERMISSION),
                 PendingIntent.FLAG_UPDATE_CURRENT // или FLAG_UPDATE_CURRENT, в зависимости от версии SDK
             )
+            postToast("Получение разрешения для подключения!")
             usbManager.requestPermission(driver.device, permissionIntent)
         } else {
             // Если разрешение уже есть, можно сразу запустить соединение
+            postToast("Успешное подключение!")
             Log.d(
                 "requestUsbPermission",
                 "Permission already granted for device: ${driver.device.deviceName}"
@@ -184,6 +215,28 @@ class SensorFragment : Fragment() {
             // usbSensorDataSource.startListening() или аналогичный.
             viewModel.startLiveData()
         }
+    }
+    private fun showMoreActionsMenu(anchor: View) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menuInflater.inflate(R.menu.buttons_menu, popup.menu)
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_calibrate_arduino -> {
+                    viewModel.calibrate()
+                    true
+                }
+                R.id.action_calibrate_app -> {
+                    viewModel.calibrateSensors()
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    private fun postToast(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
     }
 
 }

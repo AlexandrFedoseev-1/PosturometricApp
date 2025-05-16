@@ -17,8 +17,11 @@ class SessionRepositoryImpl(
     override fun getAllSessions(): Flow<List<Session>> =
         appDatabase.sessionDao().getAllSession().map { list -> list.map { it.toDomain() } }
 
-//    override fun getSessionById(sessionId: Long): Flow<SessionEntity?> =
+    //    override fun getSessionById(sessionId: Long): Flow<SessionEntity?> =
 //        sessionDao.getSessionById(sessionId)
+    override suspend fun deleteSession(session: Session) {
+        appDatabase.sessionDao().deleteSession(session.toEntity())
+    }
 
     override fun getSensorDataForSession(sessionId: Long): Flow<List<SensorData>> =
         appDatabase.sensorDao().getSensorDataForSession(sessionId).map { list -> list.map { it.toDomain() } }
@@ -26,6 +29,11 @@ class SessionRepositoryImpl(
         id = id,
         startTime = startTime,
         endTime = endTime
+    )
+    private  fun Session.toEntity() = SessionEntity(
+        id = id,
+        startTime = startTime,
+        endTime = endTime ?: 0L
     )
 
     private fun SensorDataEntity.toDomain() = SensorData(

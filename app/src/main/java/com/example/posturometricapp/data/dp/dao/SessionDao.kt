@@ -1,6 +1,7 @@
 package com.example.posturometricapp.data.dp.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import com.example.posturometricapp.data.dp.entity.SessionEntity
@@ -10,6 +11,9 @@ import kotlinx.coroutines.flow.Flow
 interface SessionDao {
     @Insert
     suspend fun insertSession(session: SessionEntity): Long
+
+    @Delete
+    suspend fun deleteSession(session: SessionEntity)
 
     @Query("UPDATE session SET endTime = :endTime WHERE id = :sessionId")
     suspend fun updateSessionEndTime(sessionId: Long, endTime: Long)
