@@ -1,5 +1,6 @@
 package com.example.posturometricapp.ui.sessionDetails
 
+import android.annotation.SuppressLint
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -9,15 +10,21 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.isVisible
+import androidx.core.view.marginStart
+import androidx.lifecycle.ViewModelStore
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.posturometricapp.R
+import com.example.posturometricapp.convertToGrams
 import com.example.posturometricapp.databinding.FragmentSessionDetailsBinding
 import com.example.posturometricapp.databinding.FragmentSessionListBinding
 import com.example.posturometricapp.domain.model.SensorData
+import com.example.posturometricapp.formatTimestampDate
 import com.example.posturometricapp.formatTimestampTime
+import com.example.posturometricapp.timeToString
 import com.example.posturometricapp.ui.BarMarkerView
 import com.example.posturometricapp.ui.SensorMarkerView
 import com.github.mikephil.charting.components.AxisBase
@@ -38,6 +45,7 @@ import com.google.android.material.chip.Chip
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.util.Locale
 import kotlin.math.absoluteValue
+import kotlin.math.roundToInt
 
 
 class SessionDetailsFragment : Fragment() {
@@ -54,9 +62,11 @@ class SessionDetailsFragment : Fragment() {
         return binding.root
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         viewModel.getDataForSession(args.session.id)
+        binding.toolbar.subtitle = formatTimestampDate(args.session.startTime)
         binding.tvStart.text = "Начало:" + formatTimestampTime(args.session.startTime)
         binding.tvEnd.text = "Конец:" + args.session.endTime?.let { formatTimestampTime(it) }
         // 1) Настройка Top 6
@@ -73,6 +83,9 @@ class SessionDetailsFragment : Fragment() {
 
         // 2) Кнопка Температуры
         binding.btnTemperature.setOnClickListener {
+            if (!viewModel.lineChartIsVisible.value!!) {
+                viewModel.setLineChartIsVisible()
+            }
             viewModel.onTemperatureClicked()
             binding.chipGroupSensors.clearCheck()
         }
@@ -85,7 +98,7 @@ class SessionDetailsFragment : Fragment() {
         repeat(32) { idx ->
             val chip = Chip(requireContext()).apply {
                 id = View.generateViewId()
-                text = "#${idx + 1}"
+                text = "№${idx + 1}"
                 isCheckable = true
                 setOnClickListener { viewModel.onSensorChipSelected(idx) }
             }
@@ -98,6 +111,14 @@ class SessionDetailsFragment : Fragment() {
         observeDataAndRedraw()
         viewModel.chartEntries.observe(viewLifecycleOwner) { entries ->
             updateChart(entries)
+        }
+        viewModel.chartMode.observe(viewLifecycleOwner) { mode ->
+            binding.YLineChart.text = when (mode) {
+                SessionDetailsViewModel.ChartMode.SENSOR -> "Нагрузка на датчик, г"
+                SessionDetailsViewModel.ChartMode.TEMPERATURE -> "Температура, °C"
+            }
+            val offsetDp = if (mode == SessionDetailsViewModel.ChartMode.SENSOR) 0 else 20
+            binding.YLineChart.translationX = offsetDp * resources.displayMetrics.density
         }
         viewModel.sensorRecords.observe(viewLifecycleOwner) { recs ->
             if (recs.isEmpty()) return@observe
@@ -140,6 +161,7 @@ class SessionDetailsFragment : Fragment() {
 
                 // отрисуем сразу для позиции 0
                 updateBarChart(0, recs)
+                viewModel.onSensorChipSelected(0)
                 viewModel.onSliderIndexChanged(0)
                 binding.tvSliderTime.text = "0.0s"
             }
@@ -172,16 +194,41 @@ class SessionDetailsFragment : Fragment() {
         viewModel.currentPsychState.observe(viewLifecycleOwner) { stateName ->
             binding.tvPsychState.text = "Состояние: $stateName"
         }
+        binding.btnLineChart.setOnClickListener {
+            viewModel.setLineChartIsVisible()
+        }
+
+        binding.btnBarChart.setOnClickListener {
+            viewModel.setBarChartIsVisible()
+        }
+
+        viewModel.lineChartIsVisible.observe(viewLifecycleOwner) { res ->
+            binding.lineChartContainer.isVisible = res
+        }
+        viewModel.barChartIsVisible.observe(viewLifecycleOwner) { res ->
+            binding.barChartContainer.isVisible = res
+        }
 
         // 6) Stats
         viewModel.selectedSensorStats.observe(viewLifecycleOwner) { stats ->
             if (stats != null) {
+                val recs = viewModel.sensorRecords.value
                 binding.cardStats.visibility = View.VISIBLE
+                binding.tvSensorNum.text = "№${stats.sensorNum}:"
                 binding.tvMaxStat.text =
-                    "Max: ${stats.maxValue} - Time: ${SessionDetailsViewModel.formatTime(stats.maxTime)}"
+                    "Max: ${convertToGrams(stats.maxValue.toFloat())}g - Time: ${
+                        timeToString(
+                            stats.maxTime - (recs?.firstOrNull()?.timestamp ?: 0L)
+                        )
+                    }"
                 binding.tvMinStat.text =
-                    "Min: ${stats.minValue} - Time: ${SessionDetailsViewModel.formatTime(stats.minTime)}"
-                binding.tvAvgStat.text = "Avg: ${"%.1f".format(stats.average)}"
+                    "Min: ${convertToGrams(stats.minValue.toFloat())}g - Time: ${
+                        timeToString(
+                            stats.minTime - (recs?.firstOrNull()?.timestamp ?: 0L)
+                        )
+                    }"
+                binding.tvAvgStat.text =
+                    "Avg: ${convertToGrams(stats.average.toFloat())}g"
             } else {
 
             }
@@ -195,10 +242,10 @@ class SessionDetailsFragment : Fragment() {
 
         // создаём BarEntry для всех 32 сенсоров
         val entries = values.mapIndexed { sensorId, v ->
-            BarEntry(sensorId.toFloat(), v.toFloat())
+            BarEntry(sensorId.toFloat(), convertToGrams(v.toFloat()))
         }
 
-        val set = BarDataSet(entries, "Давление по сенсорам").apply {
+        val set = BarDataSet(entries, "Нагрузка на датчик, г").apply {
             setDrawValues(false)
         }
         val data = BarData(set).apply {
@@ -214,7 +261,7 @@ class SessionDetailsFragment : Fragment() {
             // X-ось: подписи «№1, №2, … №32»
             xAxis.apply {
                 granularity = 1f
-                valueFormatter = IndexAxisValueFormatter((1..32).map { "#$it" })
+                valueFormatter = IndexAxisValueFormatter((1..32).map { "№$it" })
                 position = XAxis.XAxisPosition.BOTTOM
             }
 
@@ -250,11 +297,12 @@ class SessionDetailsFragment : Fragment() {
                     val seconds = deltaMs / 1000
                     val ms = (deltaMs % 1000) / 100
                     // Например: "12.3s"
-                    return "${seconds}.${ms}"
+                    return "${seconds}.${ms}s"
                 }
             }
         }
     }
+
 
     private fun updateChart(entries: List<Entry>) {
         val ds = LineDataSet(entries, "").apply {
@@ -324,13 +372,13 @@ class SessionDetailsFragment : Fragment() {
             // Делаем полупрозрачным
             baseColors[idx].withAlpha(30)
 
-            if (name =="Спокойный"){
+            if (name == "Спокойный") {
                 baseColors[0].withAlpha(30)
-            }else if (name =="Напряженный"){
+            } else if (name == "Напряженный") {
                 baseColors[1].withAlpha(30)
-            }else if (name =="Встревоженный"){
+            } else if (name == "Встревоженный") {
                 baseColors[3].withAlpha(30)
-            }else{
+            } else {
                 baseColors[4].withAlpha(30)
             }
         }
@@ -340,10 +388,29 @@ class SessionDetailsFragment : Fragment() {
         viewModel.sensorRecords.observe(viewLifecycleOwner) {
             binding.lineChart.invalidate()
         }
-        viewModel.psychStates.observe(viewLifecycleOwner) {
+        viewModel.psychStates.observe(viewLifecycleOwner) { states ->
             binding.lineChart.invalidate()
+            updateStateLegend(states.map { it.stateName }.distinct())
         }
     }
+
+    private fun updateStateLegend(names: List<String>) {
+        val legend = binding.llStateLegend
+        legend.removeAllViews()
+
+        names.forEach { name ->
+            // inflate простой layout: квадратный View + TextView
+            val item = LayoutInflater.from(requireContext())
+                .inflate(R.layout.item_legend, legend, false)
+            val colorView = item.findViewById<View>(R.id.colorIndicator)
+            val labelView = item.findViewById<TextView>(R.id.legendLabel)
+
+            colorView.setBackgroundColor(getColorForState(name))
+            labelView.text = name
+            legend.addView(item)
+        }
+    }
+
 
     // Расширение для простого изменения альфа-канала
     private fun Int.withAlpha(alpha: Int): Int {
@@ -351,4 +418,6 @@ class SessionDetailsFragment : Fragment() {
         val rgb = this and 0x00FFFFFF
         return a or rgb
     }
+
+
 }

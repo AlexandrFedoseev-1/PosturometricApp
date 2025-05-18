@@ -73,17 +73,58 @@
                 app:layout_constraintTop_toBottomOf="@id/headerInfo"
                 app:spanCount="3" />
 
-            <!-- Кнопка средней температуры -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnTemperature"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+
+            <TextView
+                android:id="@+id/tvChart"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:paddingHorizontal="16dp"
-                android:text="Темп: -- °C"
+                android:layout_marginTop="5dp"
+                android:text="Графики:"
+                android:textSize="20sp"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/rvTopSensors" />
+                app:layout_constraintTop_toBottomOf="@id/scroll" />
+
+            <LinearLayout
+                android:id="@+id/btnContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvChart">
+                <!-- Кнопка средней температуры -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTemperature"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="0dp"
+                    android:text="Темп: -- °C"
+                     />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnLineChart"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="0dp"
+                    android:text="Линейный"
+                     />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBarChart"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="0dp"
+                    android:text="Столбчатый"
+                     />
+
+            </LinearLayout>
 
             <!-- ChipGroup для всех 32 датчиков -->
             <HorizontalScrollView
@@ -94,110 +135,213 @@
                 android:scrollbars="horizontal"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/btnTemperature">
+                app:layout_constraintTop_toBottomOf="@id/rvTopSensors">
 
                 <com.google.android.material.chip.ChipGroup
                     android:id="@+id/chipGroupSensors"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="8dp"
+                    android:paddingHorizontal="8dp"
                     app:selectionRequired="true"
                     app:singleSelection="true" />
             </HorizontalScrollView>
-            <TextView
-                android:id="@+id/tvSliderTime"
-                android:layout_width="48dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:text="0.0s"
-                android:textSize="14sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintStart_toEndOf="@id/sliderTime"
-                app:layout_constraintTop_toTopOf="@id/sliderTime"
-                app:layout_constraintBottom_toBottomOf="@id/sliderTime" />
-            <com.google.android.material.slider.Slider
-                android:id="@+id/sliderTime"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_margin="16dp"
-                android:stepSize="1"
-                android:valueFrom="0"
-                android:valueTo="1"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/tvSliderTime"
-                app:layout_constraintTop_toBottomOf="@id/barChart" />
-            <TextView
-                android:id="@+id/tvPsychState"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Состояние: –"
-                android:textSize="14sp"
-                android:layout_marginTop="8dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/sliderTime"/>
 
-            <!-- BarChart для отображения всех 32 сенсоров -->
-            <com.github.mikephil.charting.charts.BarChart
-                android:id="@+id/barChart"
+
+            <!-- Контейнер для LineChart -->
+            <LinearLayout
+                android:id="@+id/lineChartContainer"
                 android:layout_width="0dp"
-                android:layout_height="200dp"
-                android:layout_margin="16dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical"
+                android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/scroll" />
-            <!-- График -->
-            <com.github.mikephil.charting.charts.LineChart
-                android:id="@+id/lineChart"
+                app:layout_constraintTop_toBottomOf="@id/btnContainer">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="250dp">
+                    <!-- Y-Axis title (повёрнутый TextView) -->
+                    <TextView
+                        android:id="@+id/YLineChart"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="start|center_vertical"
+                        android:layout_marginStart="-40dp"
+                        android:gravity="start"
+                        android:rotation="-90"
+                        android:text="Нагрузка на датчик, г"
+                        android:textSize="10sp" />
+
+                    <!-- Сам график -->
+                    <com.github.mikephil.charting.charts.LineChart
+                        android:id="@+id/lineChart"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="16dp" />
+
+                    <!-- X-Axis title -->
+                    <TextView
+                        android:id="@+id/XLineChart"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|center_horizontal"
+                        android:text="Время, с"
+                        android:textSize="10sp" />
+                </FrameLayout>
+                <!-- Легенда состояний -->
+
+                <GridLayout
+                    android:id="@+id/llStateLegend"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:columnCount="2"
+                    android:padding="8dp" />
+            </LinearLayout>
+
+            <!-- Контейнер для BarChart -->
+            <LinearLayout
+                android:id="@+id/barChartContainer"
                 android:layout_width="0dp"
-                android:layout_height="200dp"
-                android:layout_marginTop="8dp"
-                android:padding="16dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvPsychState" />
+                app:layout_constraintTop_toBottomOf="@id/cardStats">
+                <TextView
+                    android:id="@+id/tvPsychState"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="8dp"
+                    android:text="Состояние: –"
+                    android:textSize="14sp" />
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="240dp">
+                    <!-- Y-Axis title (повёрнутый TextView) -->
+                    <TextView
+                        android:id="@+id/YBarChart"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="start|center_vertical"
+                        android:layout_marginStart="-40dp"
+                        android:gravity="start"
+                        android:rotation="-90"
+                        android:text="Нагрузка на датчик, г"
+                        android:textSize="10sp" />
+
+                    <!-- Сам график -->
+                    <!-- BarChart для отображения всех 32 сенсоров -->
+                    <com.github.mikephil.charting.charts.BarChart
+                        android:id="@+id/barChart"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginBottom="10dp" />
+
+                    <!-- X-Axis title -->
+                    <TextView
+                        android:id="@+id/XBarChart"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|center_horizontal"
+                        android:text="№ датчика"
+                        android:textSize="10sp" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvSliderTime"
+                        android:layout_width="48dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:text="0.0s"
+                        android:textSize="14sp" />
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/sliderTime"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="10dp"
+                        android:layout_weight="1"
+                        android:stepSize="1"
+                        android:valueFrom="0"
+                        android:valueTo="1" />
+
+
+                </LinearLayout>
+
+
+
+            </LinearLayout>
+
 
             <!-- Статистика выбранного датчика -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardStats"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_margin="16dp"
+                android:layout_marginTop="10dp"
                 app:cardCornerRadius="8dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/lineChart">
-
+                app:layout_constraintTop_toBottomOf="@id/lineChartContainer">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:padding="8dp">
                     <TextView
-                        android:id="@+id/tvMaxStat"
+                        android:id="@+id/tvSensorNum"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Max: -- at --"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/tvMinStat"
-                        android:layout_width="wrap_content"
+                        android:textSize="16sp" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="16dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Min: -- at --"
-                        android:textSize="14sp" />
+                        android:orientation="vertical"
+                        android:gravity="start">
 
-                    <TextView
-                        android:id="@+id/tvAvgStat"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Avg: --"
-                        android:textSize="14sp" />
+                        <TextView
+                            android:id="@+id/tvMaxStat"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Max: -- at --ddddddddddddddd"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvMinStat"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Min: -- at --"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvAvgStat"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Avg: --"
+                            android:textSize="14sp" />
+                    </LinearLayout>
                 </LinearLayout>
+
+
             </com.google.android.material.card.MaterialCardView>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>

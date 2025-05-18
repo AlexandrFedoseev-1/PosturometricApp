@@ -9,6 +9,7 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.map
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
+import com.example.posturometricapp.convertToGrams
 import com.example.posturometricapp.domain.api.PsychStateInteractor
 
 import com.example.posturometricapp.domain.api.SessionInteractor
@@ -21,6 +22,7 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 class SessionDetailsViewModel(
@@ -43,6 +45,18 @@ class SessionDetailsViewModel(
 
     private val _currentPsychState = MutableLiveData<String>()
     val currentPsychState: LiveData<String> = _currentPsychState
+    private val _lineChartIsVisible = MutableLiveData<Boolean>(false)
+    val lineChartIsVisible: LiveData<Boolean> = _lineChartIsVisible
+    private val _barChartIsVisible = MutableLiveData<Boolean>(false)
+    val barChartIsVisible: LiveData<Boolean> = _barChartIsVisible
+
+    fun setLineChartIsVisible() {
+        _lineChartIsVisible.value = !(_lineChartIsVisible.value ?: false)
+    }
+    fun setBarChartIsVisible() {
+        _barChartIsVisible.value = !(_barChartIsVisible.value ?: false)
+    }
+
     // Параметры
     private val alpha = 0.2
     private val rateLimit = 10_000_000L
@@ -239,7 +253,7 @@ class SessionDetailsViewModel(
                 ChartMode.SENSOR -> {
                     val idx = _selectedSensor.value ?: 0
                     recs.mapIndexed { i, it ->
-                        Entry(i.toFloat(), it.sensorValues[idx].toFloat())
+                        Entry(i.toFloat(), convertToGrams(it.sensorValues[idx].toFloat()))
                     }
                 }
 
@@ -254,6 +268,7 @@ class SessionDetailsViewModel(
 
     // 7️⃣ Stats for selected sensor
     data class SensorStats(
+        val sensorNum: Int,
         val maxValue: Long, val maxTime: Long,
         val minValue: Long, val minTime: Long,
         val average: Double
@@ -269,6 +284,7 @@ class SessionDetailsViewModel(
             val maxPair = values.zip(times).maxByOrNull { it.first }!!
             val minPair = values.zip(times).minByOrNull { it.first }!!
             SensorStats(
+                sensorNum = idx+1,
                 maxValue = maxPair.first,
                 maxTime = maxPair.second,
                 minValue = minPair.first,

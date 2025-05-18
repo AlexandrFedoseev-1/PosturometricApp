@@ -19,8 +19,8 @@ class BarMarkerView(
     override fun refreshContent(e: Entry?, highlight: Highlight?) {
         if (e is BarEntry) {
             val sensorIdx = e.x.toInt()
-            val value     = e.y.toLong()
-            tvValue.text = "#${sensorIdx+1}: $value"
+            val value     = e.y
+            tvValue.text = "№${sensorIdx+1}: ${value}"
         }
         super.refreshContent(e, highlight)
     }
