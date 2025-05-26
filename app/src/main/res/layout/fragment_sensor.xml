@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.SensorFragment">
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginBottom="10dp"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:focusableInTouchMode="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:id="@+id/llPsychState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Текущее состояние: "
+                    android:textSize="24sp"
+
+                    />
+
+                <TextView
+                    android:id="@+id/tvPsychState"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Расслабленный"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRequestUsbPermission"
+                style="@style/ButtonStyle"
+                app:icon ="@drawable/usb_svgrepo_com"
+                android:visibility="visible"
+                app:layout_constraintBottom_toBottomOf="@+id/grid_head"
+                app:layout_constraintEnd_toStartOf="@+id/grid_head"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/grid_head" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEnableReading"
+                style="@style/ButtonStyle"
+                android:layout_marginStart="16dp"
+                android:tooltipText="Начать сессию"
+                app:icon="@drawable/play_svgrepo_com"
+                app:layout_constraintBottom_toBottomOf="@+id/grid_head"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/grid_head" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStopReading"
+                style="@style/ButtonStyle"
+                android:layout_marginStart="16dp"
+                app:icon="@drawable/stop_svgrepo_com"
+                app:iconGravity="top"
+                android:tooltipText="Остановить сессию"
+                app:layout_constraintBottom_toBottomOf="@+id/grid_head"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/grid_head" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStartLiveData"
+                style="@style/ButtonStyle"
+                android:layout_marginStart="16dp"
+                app:icon="@drawable/play_stream_svgrepo_com"
+                app:layout_constraintBottom_toBottomOf="@+id/grid_head"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/grid_head"
+                android:tooltipText="Запустить поток данных" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStopLiveData"
+                style="@style/ButtonStyle"
+                android:layout_marginEnd="16dp"
+                app:icon="@drawable/signal_stream_slash_svgrepo_com"
+                app:layout_constraintBottom_toBottomOf="@+id/grid_head"
+                app:layout_constraintEnd_toStartOf="@id/grid_head"
+                app:layout_constraintTop_toTopOf="@id/grid_head"
+                android:tooltipText="Остановить поток данных" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnChangePsychState"
+                style="@style/ButtonStyle"
+                android:layout_marginStart="16dp"
+                app:icon="@drawable/smile_circle_svgrepo_com"
+                app:layout_constraintBottom_toBottomOf="@+id/grid_head"
+                app:layout_constraintStart_toEndOf="@id/grid_head"
+                app:layout_constraintTop_toTopOf="@id/grid_head"
+                android:tooltipText="Состояние" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnMoreActions"
+                style="@style/ButtonStyle"
+                android:layout_marginEnd="16dp"
+                app:icon="@drawable/settings_svgrepo_com"
+                android:tooltipText="Настройки"
+                app:layout_constraintBottom_toBottomOf="@+id/grid_head"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/grid_head" />
+
+            <GridLayout
+                android:id="@+id/grid_head"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/chair_background"
+                android:columnCount="1"
+                android:padding="4dp"
+                android:rowCount="1"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/llPsychState">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor20"
+                    style="@style/SensorStyle"
+                    android:text="20" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor17"
+                    style="@style/SensorStyle"
+                    android:text="17" />
+            </GridLayout>
+
+            <GridLayout
+                android:id="@+id/grid_back"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:background="@drawable/chair_background"
+                android:columnCount="4"
+                android:padding="4dp"
+                android:rowCount="4"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/grid_head">
+                <!-- 16 сенсоров для спинки -->
+                <!-- Сенсоры можно задавать либо программно, либо объявить здесь вручную -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor32"
+                    style="@style/SensorStyle"
+
+                    android:text="32" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor31"
+                    style="@style/SensorStyle"
+                    android:text="31" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor30"
+                    style="@style/SensorStyle"
+                    android:text="30" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor29"
+                    style="@style/SensorStyle"
+                    android:text="29" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor28"
+                    style="@style/SensorStyle"
+                    android:text="28" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor27"
+                    style="@style/SensorStyle"
+                    android:text="27" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor26"
+                    style="@style/SensorStyle"
+                    android:text="26" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor25"
+                    style="@style/SensorStyle"
+                    android:text="25" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor24"
+                    style="@style/SensorStyle"
+                    android:text="24" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor23"
+                    style="@style/SensorStyle"
+                    android:text="23" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor22"
+                    style="@style/SensorStyle"
+                    android:text="22" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor21"
+                    style="@style/SensorStyle"
+                    android:text="21" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor19"
+                    style="@style/SensorStyle"
+                    android:layout_column="1"
+                    android:text="19" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor18"
+                    style="@style/SensorStyle"
+                    android:text="18" />
+
+
+                <!-- ... добавить остальные sensor_back_2 .. sensor_back_16 -->
+            </GridLayout>
+
+            <GridLayout
+                android:id="@+id/grid_seat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/chair_background"
+                android:columnCount="4"
+                android:padding="4dp"
+                android:rowCount="4"
+                app:layout_constraintDimensionRatio="h,1.5:1"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/grid_back">
+                <!-- 16 сенсоров для спинки -->
+                <!-- Сенсоры можно задавать либо программно, либо объявить здесь вручную -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor16"
+                    style="@style/SensorStyle"
+                    android:text="16"
+
+                    />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor15"
+                    style="@style/SensorStyle"
+                    android:text="15"
+
+                    />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor14"
+                    style="@style/SensorStyle"
+                    android:text="14"
+
+                    />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor13"
+                    style="@style/SensorStyle"
+                    android:text="13" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor12"
+                    style="@style/SensorStyle"
+                    android:text="12" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor11"
+                    style="@style/SensorStyle"
+                    android:text="11" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor10"
+                    style="@style/SensorStyle"
+                    android:text="10" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor9"
+                    style="@style/SensorStyle"
+                    android:text="9" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor8"
+                    style="@style/SensorStyle"
+                    android:text="8" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor7"
+                    style="@style/SensorStyle"
+                    android:text="7" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor6"
+                    style="@style/SensorStyle"
+                    android:text="6" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor5"
+                    style="@style/SensorStyle"
+                    android:text="5" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor4"
+                    style="@style/SensorStyle"
+                    android:text="4" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor3"
+                    style="@style/SensorStyle"
+                    android:text="3" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor2"
+                    style="@style/SensorStyle"
+                    android:text="2" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sensor1"
+                    style="@style/SensorStyle"
+                    android:text="1" />
+                <!-- ... добавить остальные sensor_back_2 .. sensor_back_16 -->
+            </GridLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

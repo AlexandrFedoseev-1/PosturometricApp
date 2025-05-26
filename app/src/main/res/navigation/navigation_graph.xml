@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/navigation_graph"
+    app:startDestination="@id/mainFragment">
+
+    <fragment
+        android:id="@+id/mainFragment"
+        android:name="com.example.posturometricapp.ui.MainFragment"
+        android:label="fragment_main"
+        tools:layout="@layout/fragment_main">
+        <action
+            android:id="@+id/action_mainFragment_to_sessionDetailsFragment"
+            app:destination="@id/sessionDetailsFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/sensorFragment"
+        android:name="com.example.posturometricapp.ui.SensorFragment"
+        android:label="fragment_sensor"
+        tools:layout="@layout/fragment_sensor" />
+    <fragment
+        android:id="@+id/sessionFragment"
+        android:name="com.example.posturometricapp.ui.session.SessionListFragment"
+        android:label="fragment_session"
+        tools:layout="@layout/fragment_session_list">
+        <action
+            android:id="@+id/action_sessionFragment_to_sessionDetailsFragment"
+            app:destination="@id/sessionDetailsFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/sessionDetailsFragment"
+        android:name="com.example.posturometricapp.ui.sessionDetails.SessionDetailsFragment"
+        android:label="fragment_session_details"
+        tools:layout="@layout/fragment_session_details">
+        <argument
+            android:name="session"
+            app:argType="com.example.posturometricapp.domain.model.Session"
+            app:nullable="false" />
+
+    </fragment>
+    <action
+        android:id="@+id/action_global_sessionDetailsFragment"
+        app:destination="@id/sessionDetailsFragment"
+        app:popUpTo="@id/sessionFragment"
+        app:popUpToSaveState="true"
+        app:restoreState="true"/>
+</navigation>
