@@ -5,11 +5,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.map
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
-import com.example.posturometricapp.convertToGrams
+import com.example.posturometricapp.convertToStUnit
 import com.example.posturometricapp.domain.api.PsychStateInteractor
 
 import com.example.posturometricapp.domain.api.SessionInteractor
@@ -22,7 +21,6 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.pow
-import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 class SessionDetailsViewModel(
@@ -58,8 +56,8 @@ class SessionDetailsViewModel(
     }
 
     // Параметры
-    private val alpha = 0.2
-    private val rateLimit = 10_000_000L
+    private val alpha = 0.8
+    private val rateLimit = 26_000_000L
     private val outlierZThreshold = 3.0
     private val historySize = 30
 
@@ -253,7 +251,7 @@ class SessionDetailsViewModel(
                 ChartMode.SENSOR -> {
                     val idx = _selectedSensor.value ?: 0
                     recs.mapIndexed { i, it ->
-                        Entry(i.toFloat(), convertToGrams(it.sensorValues[idx].toFloat()))
+                        Entry(i.toFloat(), convertToStUnit(it.sensorValues[idx]))
                     }
                 }
 

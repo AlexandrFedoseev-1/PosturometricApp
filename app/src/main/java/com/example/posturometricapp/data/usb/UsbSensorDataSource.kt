@@ -105,7 +105,6 @@ class UsbSensorDataSource(private val context: Context) {
                                 // Извлекаем пакет: с первой позиции до символа '#' включительно
                                 val fullMessageRaw = readBuffer.substring(0, endIndex + 1)
                                 val fullMessage = fullMessageRaw.trim()
-                                Log.d("fullMessage", "fullMessage: '$fullMessage'")
                                 if (fullMessage.startsWith("S") && fullMessage.endsWith("#")) {
                                     val content = fullMessage.substring(1, fullMessage.length - 1)
                                     val parts = content.split("$")
@@ -127,10 +126,6 @@ class UsbSensorDataSource(private val context: Context) {
                                                             .average().toLong()
                                                     }
                                                     calibrationOffsets = offsets
-                                                    Log.d(
-                                                        "CALIBRATION",
-                                                        "Calibration offsets computed: $offsets"
-                                                    )
                                                     // Выключаем режим калибровки и очищаем накопитель
                                                     isCalibrating = false
                                                     calibrationAccumulator.clear()

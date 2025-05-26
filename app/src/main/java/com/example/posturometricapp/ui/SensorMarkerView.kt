@@ -3,15 +3,13 @@ package com.example.posturometricapp.ui
 import android.content.Context
 import android.widget.TextView
 import com.example.posturometricapp.R
-import com.example.posturometricapp.convertToGrams
+import com.example.posturometricapp.convertToStUnit
 import com.example.posturometricapp.domain.model.SensorData
 import com.example.posturometricapp.ui.sessionDetails.SessionDetailsViewModel
 import com.github.mikephil.charting.components.MarkerView
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.highlight.Highlight
 import com.github.mikephil.charting.utils.MPPointF
-import kotlin.math.abs
-import kotlin.math.roundToInt
 
 class SensorMarkerView(
     context: Context,
@@ -48,7 +46,7 @@ class SensorMarkerView(
                 "Темп: %.1f°C".format(data.temperature)
             SessionDetailsViewModel.ChartMode.SENSOR -> {
                 val sensorId = selectedSensorId() ?: 0
-                "№${sensorId + 1}: ${convertToGrams(data.sensorValues[sensorId].toFloat())}"
+                "№${sensorId + 1}: ${convertToStUnit(data.sensorValues[sensorId])}"
             }
         }
         tvContent.text = valueText

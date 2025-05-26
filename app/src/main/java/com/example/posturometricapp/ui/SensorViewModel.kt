@@ -12,6 +12,7 @@ import com.example.posturometricapp.domain.api.SensorDataInteractor
 import com.example.posturometricapp.domain.model.SensorButtonState
 import com.example.posturometricapp.domain.model.SensorData
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -45,7 +46,8 @@ class SensorViewModel(
     private var currentSessionId: Long? = null
 
     // Текущий psychStateId
-    private var currentStateId: Long? = null
+    private var currentPsychStateId: Long? = null
+    var con = 0
 
     /**
      * Начинает сеанс. Вызывает startSession() у репозитория (use case),
@@ -62,7 +64,7 @@ class SensorViewModel(
     fun startSessionWithPsychState(stateName: String) {
         viewModelScope.launch {
             currentSessionId = sensorDataInteractor.startSession()
-            currentStateId = psychStateInteractor.startState(currentSessionId!!, stateName)
+            currentPsychStateId = psychStateInteractor.startState(currentSessionId!!, stateName)
             _screenState.value = SensorButtonState.StartSession
         }
         _psychState.value = stateName
@@ -77,13 +79,13 @@ class SensorViewModel(
     fun stopSession() {
         viewModelScope.launch {
             // Завершаем текущее псих. состояние
-            currentStateId?.let { psychStateInteractor.endState(it) }
+            currentPsychStateId?.let { psychStateInteractor.endState(it) }
             // Завершаем сессию и поток данных
             currentSessionId?.let { sensorDataInteractor.stopSession(it) }
             sensorDataJob?.cancel()
             playbackJob?.cancel()
             currentSessionId = null
-            currentStateId = null
+            currentPsychStateId = null
             _screenState.value = SensorButtonState.HasPermission
             _message.value = "Сессия завершена!"
             _psychState.value = ""
@@ -93,7 +95,7 @@ class SensorViewModel(
     fun switchPsychState(stateName: String) {
         viewModelScope.launch {
             currentSessionId?.let {
-                currentStateId = psychStateInteractor.switchState(it, stateName)
+                currentPsychStateId = psychStateInteractor.switchState(it, stateName)
             }
         }
         _psychState.value = stateName
@@ -114,11 +116,18 @@ class SensorViewModel(
                 currentSessionId?.let { sessionId ->
                     sensorDataInteractor.saveSensorData(sessionId, data)
                 }
+                if (con ==0){
+                    delay(2000L)
+                    calibrateSensors()
+                    con = 1
+                }
             }
-            _message.value = "Запущен поток данных!"
-            _screenState.value = SensorButtonState.StreamData
         }
+        _message.value = "Запущен поток данных!"
+        _screenState.value = SensorButtonState.StreamData
+
     }
+
 
     /**
      * Останавливает сбор live-данных.
@@ -224,6 +233,10 @@ class SensorViewModel(
     }
     fun clearMessage() {
         _message.value = ""
+    }
+
+    fun setScreenState(state: SensorButtonState){
+        _screenState.value = state
     }
 
 

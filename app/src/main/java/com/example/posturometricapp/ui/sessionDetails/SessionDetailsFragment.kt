@@ -11,16 +11,11 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import android.widget.Toast
 import androidx.core.view.isVisible
-import androidx.core.view.marginStart
-import androidx.lifecycle.ViewModelStore
 import androidx.navigation.fragment.navArgs
-import androidx.recyclerview.widget.GridLayoutManager
 import com.example.posturometricapp.R
-import com.example.posturometricapp.convertToGrams
+import com.example.posturometricapp.convertToStUnit
 import com.example.posturometricapp.databinding.FragmentSessionDetailsBinding
-import com.example.posturometricapp.databinding.FragmentSessionListBinding
 import com.example.posturometricapp.domain.model.SensorData
 import com.example.posturometricapp.formatTimestampDate
 import com.example.posturometricapp.formatTimestampTime
@@ -38,14 +33,10 @@ import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.ValueFormatter
-import com.github.mikephil.charting.highlight.Highlight
-import com.github.mikephil.charting.listener.OnChartValueSelectedListener
 import com.github.mikephil.charting.renderer.LineChartRenderer
 import com.google.android.material.chip.Chip
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import java.util.Locale
 import kotlin.math.absoluteValue
-import kotlin.math.roundToInt
 
 
 class SessionDetailsFragment : Fragment() {
@@ -83,9 +74,10 @@ class SessionDetailsFragment : Fragment() {
 
         // 2) Кнопка Температуры
         binding.btnTemperature.setOnClickListener {
-            if (!viewModel.lineChartIsVisible.value!!) {
+            if (!binding.btnLineChart.isChecked == binding.btnTemperature.isChecked) {
                 viewModel.setLineChartIsVisible()
             }
+
             viewModel.onTemperatureClicked()
             binding.chipGroupSensors.clearCheck()
         }
@@ -100,7 +92,13 @@ class SessionDetailsFragment : Fragment() {
                 id = View.generateViewId()
                 text = "№${idx + 1}"
                 isCheckable = true
-                setOnClickListener { viewModel.onSensorChipSelected(idx) }
+                setOnClickListener {
+                    viewModel.onSensorChipSelected(idx)
+                    if (viewModel.lineChartIsVisible.value == true && binding.btnTemperature.isChecked) {
+                        binding.btnTemperature.isChecked = false
+                        binding.btnLineChart.isChecked = true
+                    }
+                }
             }
             binding.chipGroupSensors.addView(chip)
         }
@@ -114,10 +112,10 @@ class SessionDetailsFragment : Fragment() {
         }
         viewModel.chartMode.observe(viewLifecycleOwner) { mode ->
             binding.YLineChart.text = when (mode) {
-                SessionDetailsViewModel.ChartMode.SENSOR -> "Нагрузка на датчик, г"
+                SessionDetailsViewModel.ChartMode.SENSOR -> "Нагрузка на датчик, у.е."
                 SessionDetailsViewModel.ChartMode.TEMPERATURE -> "Температура, °C"
             }
-            val offsetDp = if (mode == SessionDetailsViewModel.ChartMode.SENSOR) 0 else 20
+            val offsetDp = if (mode == SessionDetailsViewModel.ChartMode.SENSOR) 0 else 12
             binding.YLineChart.translationX = offsetDp * resources.displayMetrics.density
         }
         viewModel.sensorRecords.observe(viewLifecycleOwner) { recs ->
@@ -196,17 +194,21 @@ class SessionDetailsFragment : Fragment() {
         }
         binding.btnLineChart.setOnClickListener {
             viewModel.setLineChartIsVisible()
+            if (binding.btnTemperature.isChecked == true)
+                binding.btnTemperature.isChecked = binding.btnLineChart.isChecked
         }
 
         binding.btnBarChart.setOnClickListener {
             viewModel.setBarChartIsVisible()
         }
 
-        viewModel.lineChartIsVisible.observe(viewLifecycleOwner) { res ->
-            binding.lineChartContainer.isVisible = res
+        viewModel.lineChartIsVisible.observe(viewLifecycleOwner) { visible ->
+            binding.lineChartContainer.isVisible = visible
+            binding.btnLineChart.isChecked = visible
         }
-        viewModel.barChartIsVisible.observe(viewLifecycleOwner) { res ->
-            binding.barChartContainer.isVisible = res
+        viewModel.barChartIsVisible.observe(viewLifecycleOwner) { visible ->
+            binding.barChartContainer.isVisible = visible
+            binding.btnBarChart.isChecked = visible
         }
 
         // 6) Stats
@@ -216,19 +218,19 @@ class SessionDetailsFragment : Fragment() {
                 binding.cardStats.visibility = View.VISIBLE
                 binding.tvSensorNum.text = "№${stats.sensorNum}:"
                 binding.tvMaxStat.text =
-                    "Max: ${convertToGrams(stats.maxValue.toFloat())}g - Time: ${
+                    "Max: ${convertToStUnit(stats.maxValue)} - Time: ${
                         timeToString(
                             stats.maxTime - (recs?.firstOrNull()?.timestamp ?: 0L)
                         )
                     }"
                 binding.tvMinStat.text =
-                    "Min: ${convertToGrams(stats.minValue.toFloat())}g - Time: ${
+                    "Min: ${convertToStUnit(stats.minValue)} - Time: ${
                         timeToString(
                             stats.minTime - (recs?.firstOrNull()?.timestamp ?: 0L)
                         )
                     }"
                 binding.tvAvgStat.text =
-                    "Avg: ${convertToGrams(stats.average.toFloat())}g"
+                    "Avg: ${"%.1f".format(convertToStUnit(stats.average.toLong()) )}"
             } else {
 
             }
@@ -242,10 +244,10 @@ class SessionDetailsFragment : Fragment() {
 
         // создаём BarEntry для всех 32 сенсоров
         val entries = values.mapIndexed { sensorId, v ->
-            BarEntry(sensorId.toFloat(), convertToGrams(v.toFloat()))
+            BarEntry(sensorId.toFloat(), convertToStUnit(v))
         }
 
-        val set = BarDataSet(entries, "Нагрузка на датчик, г").apply {
+        val set = BarDataSet(entries, "Нагрузка на датчик, у.е.").apply {
             setDrawValues(false)
         }
         val data = BarData(set).apply {

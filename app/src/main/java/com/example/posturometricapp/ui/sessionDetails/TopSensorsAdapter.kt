@@ -5,9 +5,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.example.posturometricapp.convertToGrams
+import com.example.posturometricapp.convertToStUnit
 import com.example.posturometricapp.databinding.ItemTopSensorBinding
-import kotlin.math.roundToInt
 
 class TopSensorsAdapter(
     private val onClick: (Int) -> Unit
@@ -31,7 +30,7 @@ class TopSensorsAdapter(
     inner class VH(private val binding: ItemTopSensorBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: SessionDetailsViewModel.TopSensor) {
             binding.tvSensorId.text = "№${item.id + 1}"
-            binding.tvSensorMax.text = "Max: ${convertToGrams(item.maxValue.toFloat())}, г"
+            binding.tvSensorMax.text = "Max: ${convertToStUnit(item.maxValue)}"
             binding.root.setOnClickListener { onClick(item.id) }
         }
     }

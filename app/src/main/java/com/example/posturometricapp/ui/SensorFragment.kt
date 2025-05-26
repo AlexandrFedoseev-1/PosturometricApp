@@ -40,24 +40,33 @@ class SensorFragment : Fragment() {
 
     private val usbPermissionReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == ACTION_USB_PERMISSION) {
-                synchronized(this) {
-                    // Получаем устройство из интента
-                    val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
-                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                        device?.let {
-                            // Разрешение получено, можно запускать соединение
+            when (intent?.action) {
+                ACTION_USB_PERMISSION -> {
+                    synchronized(this) {
+                        val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
+                        if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                            device?.let {
+                                postToast("Разрешение получено")
+                                viewModel.setScreenState(SensorButtonState.HasPermission)
+                                Log.d(
+                                    "USB Connect",
+                                    "Permission granted for device: ${it.deviceName}"
+                                )
+                            }
+                        } else {
+                            viewModel.setScreenState(SensorButtonState.Empty)
                             Log.d(
                                 "USB Connect",
-                                "Permission granted for device: ${device.deviceName}"
+                                "Permission denied for device: ${device?.deviceName}"
                             )
-                            // Здесь можно вызвать метод, запускающий работу с устройством.
-                            // Например, запустить метод startListening() в UsbSensorDataSource.
                         }
-                    } else {
-                        Log.d("USB Connect", "Permission denied for device: ${device?.deviceName}")
-                        // Здесь можно уведомить пользователя, что без разрешения работать не получится.
                     }
+                }
+
+                UsbManager.ACTION_USB_DEVICE_DETACHED -> {
+                    // кабель выдернули — сразу стопаем сессию
+                    postToast("USB отключен, сессия остановлена")
+                    viewModel.stopSession()
                 }
             }
         }
@@ -88,7 +97,11 @@ class SensorFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val filter = IntentFilter(ACTION_USB_PERMISSION)
+        val filter = IntentFilter().apply {
+            addAction(ACTION_USB_PERMISSION)
+            addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requireContext().registerReceiver(
                 usbPermissionReceiver, filter,
@@ -106,17 +119,19 @@ class SensorFragment : Fragment() {
                 viewModel.clearMessage()
             }
         }
-        viewModel.screenState.observe(viewLifecycleOwner){ state ->
+        viewModel.screenState.observe(viewLifecycleOwner) { state ->
             binding.btnRequestUsbPermission.isVisible = state is SensorButtonState.Empty
-            binding.btnMoreActions.isVisible = state is SensorButtonState.StreamData || state is SensorButtonState.StartSession
+            binding.btnMoreActions.isVisible =
+                state is SensorButtonState.StreamData || state is SensorButtonState.StartSession
             binding.btnChangePsychState.isVisible = state is SensorButtonState.StartSession
             binding.btnStartLiveData.isVisible = state is SensorButtonState.HasPermission
-            binding.btnStopLiveData.isVisible = state is SensorButtonState.StreamData || state is SensorButtonState.StartSession
-            binding.btnEnableReading.isVisible =state is SensorButtonState.StreamData
+            binding.btnStopLiveData.isVisible =
+                state is SensorButtonState.StreamData || state is SensorButtonState.StartSession
+            binding.btnEnableReading.isVisible = state is SensorButtonState.StreamData
             binding.btnStopReading.isVisible = state is SensorButtonState.StartSession
         }
 
-        viewModel.psychState.observe(viewLifecycleOwner){ stateName ->
+        viewModel.psychState.observe(viewLifecycleOwner) { stateName ->
             binding.llPsychState.isVisible = stateName.isNotEmpty()
             binding.tvPsychState.text = stateName
         }
@@ -133,9 +148,9 @@ class SensorFragment : Fragment() {
         binding.btnStopReading.setOnClickListener {
             viewModel.stopSession()
         }
-        binding.btnRequestUsbPermission.setOnClickListener{
-//            requestUsbPermission()
-            viewModel.fakePermissions()
+        binding.btnRequestUsbPermission.setOnClickListener {
+            requestUsbPermission()
+//            viewModel.fakePermissions()
         }
         binding.btnMoreActions.setOnClickListener {
             showMoreActionsMenu(it)
@@ -147,13 +162,13 @@ class SensorFragment : Fragment() {
 //            viewModel.calibrateSensors()
 //        }
         binding.btnStartLiveData.setOnClickListener {
-//            requestUsbPermission()
-            viewModel.playSession(1)
+            requestUsbPermission()
+//            viewModel.playSession(1)
         }
 
         binding.btnStopLiveData.setOnClickListener {
-//            viewModel.stopLiveData()
-            viewModel.stopPlayback()
+            viewModel.stopLiveData()
+//            viewModel.stopPlayback()
         }
         binding.btnEnableReading.setOnClickListener {
             AlertDialog.Builder(requireContext())
@@ -176,8 +191,13 @@ class SensorFragment : Fragment() {
         }
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        viewModel.stopSession()
+    }
     override fun onDestroy() {
         super.onDestroy()
+
         requireActivity().unregisterReceiver(usbPermissionReceiver)
     }
 
@@ -206,7 +226,7 @@ class SensorFragment : Fragment() {
             usbManager.requestPermission(driver.device, permissionIntent)
         } else {
             // Если разрешение уже есть, можно сразу запустить соединение
-            postToast("Успешное подключение!")
+
             Log.d(
                 "requestUsbPermission",
                 "Permission already granted for device: ${driver.device.deviceName}"
@@ -216,6 +236,7 @@ class SensorFragment : Fragment() {
             viewModel.startLiveData()
         }
     }
+
     private fun showMoreActionsMenu(anchor: View) {
         val popup = PopupMenu(requireContext(), anchor)
         popup.menuInflater.inflate(R.menu.buttons_menu, popup.menu)
@@ -225,10 +246,12 @@ class SensorFragment : Fragment() {
                     viewModel.calibrate()
                     true
                 }
+
                 R.id.action_calibrate_app -> {
                     viewModel.calibrateSensors()
                     true
                 }
+
                 else -> false
             }
         }

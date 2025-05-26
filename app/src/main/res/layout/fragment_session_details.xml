@@ -102,6 +102,7 @@
                     android:layout_height="wrap_content"
                     android:padding="0dp"
                     android:text="Темп: -- °C"
+                    android:checkable="true"
                      />
 
                 <com.google.android.material.button.MaterialButton
@@ -112,6 +113,7 @@
                     android:layout_height="wrap_content"
                     android:padding="0dp"
                     android:text="Линейный"
+                    android:checkable="true"
                      />
 
                 <com.google.android.material.button.MaterialButton
@@ -122,6 +124,7 @@
                     android:layout_height="wrap_content"
                     android:padding="0dp"
                     android:text="Столбчатый"
+                    android:checkable="true"
                      />
 
             </LinearLayout>
@@ -169,10 +172,10 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="start|center_vertical"
-                        android:layout_marginStart="-40dp"
+                        android:layout_marginStart="-43dp"
                         android:gravity="start"
                         android:rotation="-90"
-                        android:text="Нагрузка на датчик, г"
+                        android:text="Нагрузка на датчик, у.е."
                         android:textSize="10sp" />
 
                     <!-- Сам график -->
@@ -229,10 +232,10 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="start|center_vertical"
-                        android:layout_marginStart="-40dp"
+                        android:layout_marginStart="-43dp"
                         android:gravity="start"
                         android:rotation="-90"
-                        android:text="Нагрузка на датчик, г"
+                        android:text="Нагрузка на датчик, у.е."
                         android:textSize="10sp" />
 
                     <!-- Сам график -->
